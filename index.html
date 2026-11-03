@@ -1,0 +1,1635 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Bajo XR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Diseño: escenario oscuro de una sola apariencia; panel lateral tipo rack de efectos + escenario 3D con la pista */
+:root {
+  --stage: #0c0b12;
+  --rack: #15131d;
+  --rack-2: #1d1a28;
+  --line: #2c2939;
+  --ivory: #ece6d8;
+  --muted: #9a94a8;
+  --amber: #f2a541;
+  --star: #59c8ff;
+  --ok: #3ccf4e;
+  --e: #e5484d; --a: #f5c542; --d: #3e8ef7; --g: #f08a24;
+  --wood: #2b1d15; --fret: #8d8696;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--stage); color: var(--ivory); font-family: var(--font-body); font-size: 15px; line-height: 1.45; overflow: hidden; }
+.shell { height: 100%; display: grid; grid-template-columns: 360px minmax(0, 1fr); }
+.panel { background: var(--rack); border-right: 1px solid var(--line); overflow-y: auto; padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.stage { position: relative; min-width: 0; min-height: 0; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.brand { display: flex; flex-direction: column; gap: 6px; }
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 42px; letter-spacing: 0.02em; line-height: 1; text-transform: uppercase; }
+.brand h1 b { color: var(--amber); }
+.brand p { margin: 0; color: var(--muted); font-size: 14px; max-width: 34ch; }
+
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.sec > h2 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.hint { margin: 0; color: var(--muted); font-size: 13px; }
+
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.seg.two { grid-template-columns: repeat(2, 1fr); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { text-align: center; padding: 9px 4px; cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: .03em; border-left: 1px solid var(--line); }
+.seg label:first-of-type { border-left: 0; }
+.seg input:checked + label { background: var(--ivory); color: var(--stage); }
+.seg input:focus-visible + label { outline: 2px solid var(--amber); outline-offset: -3px; }
+
+button { font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--line); background: var(--rack-2); color: var(--ivory); padding: 10px 12px; font-family: var(--font-display); font-weight: 600; font-size: 17px; letter-spacing: .03em; }
+button:hover { border-color: var(--muted); }
+button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--ivory); color: var(--stage); border-color: var(--ivory); }
+button.vr { background: var(--amber); color: #1a1206; border-color: var(--amber); font-size: 20px; padding: 13px; }
+button.starbtn { border-color: var(--star); color: var(--star); }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btns .wide { grid-column: 1 / -1; }
+.vrnote { margin: 0; font-size: 13px; color: var(--muted); }
+
+.calib { background: var(--rack-2); border-radius: 10px; padding: 10px; }
+.calib svg { display: block; width: 100%; height: auto; }
+/* Carriles */
+.lanes { display: flex; flex-direction: column; gap: 6px; }
+.lane { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; background: var(--rack-2); border-radius: 9px; padding: 7px 10px; }
+.lane .dot { width: 26px; height: 26px; border-radius: 50%; border: 4px solid var(--c); box-shadow: inset 0 0 0 3px #0c0b12, inset 0 0 0 20px color-mix(in srgb, var(--c) 35%, transparent); }
+.lane b { font-family: var(--font-display); font-weight: 700; font-size: 19px; line-height: 1.1; }
+.lane small { display: block; color: var(--muted); font-size: 13px; }
+.lane kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; color: var(--muted); }
+
+.micbox { display: flex; flex-direction: column; gap: 10px; background: var(--rack-2); border-radius: 10px; padding: 12px 14px; }
+.tuner-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.tuner-top b { font-family: var(--font-display); font-size: 30px; font-weight: 700; }
+.tuner-top span { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.scale { position: relative; height: 18px; margin-top: 6px; background: linear-gradient(90deg, transparent 0 calc(50% - 1px), var(--muted) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)); border-bottom: 1px solid var(--line); }
+.scale i { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; left: 50%; background: var(--amber); border-radius: 2px; transition: left .08s linear; }
+.scale i.ok { background: var(--ok); }
+.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--amber); transition: width .2s; }
+.meter { height: 6px; }
+.meter i { background: var(--ok); transition: width .08s; }
+
+.ctrl { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+.ctrl label { font-size: 14px; }
+.ctrl output { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ctrl input[type=range], .ctrl .bar { grid-column: 1 / -1; width: 100%; accent-color: var(--amber); }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.check input { accent-color: var(--amber); margin-top: 3px; }
+
+.lessons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lesson { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 9px 11px; }
+.lesson strong { font-weight: 600; font-size: 16px; line-height: 1.15; }
+.lesson small { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0; }
+.lesson.on { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+
+.drop { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1.5px dashed var(--line); border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
+.drop:hover, .drop.over, .drop:focus-within { border-color: var(--amber); background: var(--rack-2); }
+.drop strong { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+.drop small { color: var(--muted); }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.song { background: var(--rack-2); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.song .name { font-weight: 600; overflow-wrap: anywhere; }
+.song .meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.score { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.score div { background: var(--rack-2); border-radius: 9px; padding: 8px 10px; }
+.score b { display: block; font-family: var(--font-mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.score span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.result { margin: 0; font-size: 14px; }
+.result b { color: var(--amber); letter-spacing: .1em; }
+
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin-top: 10px; font-size: 14px; }
+.keys dt { font-family: var(--font-mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.keys dd { margin: 0; color: var(--muted); }
+kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+
+.toast { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: var(--ivory); color: var(--stage); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; max-width: calc(100% - 32px); text-align: center; z-index: 2; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--font-display); font-size: 20px; letter-spacing: .08em; text-transform: uppercase; }
+.touchbar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 8px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); pointer-events: none; }
+.touchbar span { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--muted); background: rgba(12,11,18,.7); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+
+@media (max-width: 820px) {
+  body { overflow: auto; }
+  .shell { display: flex; flex-direction: column; height: auto; }
+  .stage { order: -1; height: 62vh; min-height: 340px; }
+  .panel { border-right: 0; overflow: visible; padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+</head>
+<body>
+<div class="shell">
+  <aside class="panel" id="panel">
+    <header class="brand">
+      <h1>Bajo <b>XR</b></h1>
+      <p>Tu bajo real, en silencio, es la referencia. El diapasón del juego se alinea con él y el visor lee tus dedos: qué traste pisas y cuándo punteas.</p>
+    </header>
+
+    <section class="sec" aria-labelledby="h-ref">
+      <h2 id="h-ref">Tu bajo como referencia</h2>
+      <div class="seg two" role="radiogroup" aria-labelledby="h-ref">
+        <input type="radio" name="anchor" id="a-fixed" value="fixed" checked><label for="a-fixed">Calibrar con el dedo</label>
+        <input type="radio" name="anchor" id="a-ctrl" value="ctrl"><label for="a-ctrl">Mando sujeto al bajo</label>
+      </div>
+      <p class="hint" id="anchorHint">Con el bajo colgado, toca 4 puntos con el índice. El diapasón queda fijo donde está tu bajo; si te mueves mucho, recalibra.</p>
+      <div class="seg two" id="ctrlSide" role="radiogroup" aria-label="Mando sujeto" hidden>
+        <input type="radio" name="side" id="s-left" value="left" checked><label for="s-left">Mando izquierdo</label>
+        <input type="radio" name="side" id="s-right" value="right"><label for="s-right">Mando derecho</label>
+      </div>
+      <div class="calib">
+        <svg viewBox="0 0 320 92" role="img" aria-label="Puntos de calibración: cuerda Mi y cuerda Sol junto a la cejuela, y las mismas cuerdas sobre el traste 12">
+          <rect x="18" y="18" width="290" height="56" rx="4" fill="var(--wood)"/>
+          <rect x="16" y="16" width="6" height="60" fill="var(--ivory)"/>
+          <g stroke="var(--fret)" stroke-width="2">
+            <line x1="62" y1="18" x2="62" y2="74"/><line x1="100" y1="18" x2="100" y2="74"/><line x1="136" y1="18" x2="136" y2="74"/><line x1="169" y1="18" x2="169" y2="74"/><line x1="200" y1="18" x2="200" y2="74"/><line x1="229" y1="18" x2="229" y2="74"/><line x1="256" y1="18" x2="256" y2="74"/><line x1="281" y1="18" x2="281" y2="74"/><line x1="304" y1="18" x2="304" y2="74" stroke-width="3"/>
+          </g>
+          <g stroke-width="2"><line x1="8" y1="26" x2="314" y2="26" stroke="var(--e)"/><line x1="8" y1="40" x2="314" y2="40" stroke="var(--a)"/><line x1="8" y1="53" x2="314" y2="53" stroke="var(--d)"/><line x1="8" y1="66" x2="314" y2="66" stroke="var(--g)"/></g>
+          <g fill="var(--stage)" stroke="var(--amber)" stroke-width="3"><circle cx="24" cy="26" r="8"/><circle cx="24" cy="66" r="8"/><circle cx="304" cy="26" r="8"/><circle cx="304" cy="66" r="8"/></g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="var(--amber)" text-anchor="middle"><text x="24" y="29.5">1</text><text x="24" y="69.5">2</text><text x="304" y="29.5">3</text><text x="304" y="69.5">4</text></g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)"><text x="40" y="12">cejuela</text><text x="268" y="12">traste 12</text><text x="40" y="88">Mi arriba, Sol abajo</text></g>
+        </svg>
+      </div>
+      <p class="vrnote" id="calibStatus">Sin calibrar. Se calibra dentro del visor.</p>
+      <label class="check"><input type="checkbox" id="showBoard" checked> Dibujar el diapasón virtual encima de tu bajo</label>
+      <label class="check"><input type="checkbox" id="synthOn" checked> Sonar tus notas (el juego toca la nota que digitas)</label>
+    </section>
+
+    <section class="sec" aria-labelledby="h-les">
+      <h2 id="h-les">Lecciones</h2>
+      <div class="lessons" id="lessons"></div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-song">
+      <h2 id="h-song">Canción</h2>
+      <label class="drop" id="drop">
+        <strong>Cargar cualquier canción</strong>
+        <small>MP3, WAV, OGG o M4A. Detecta el tempo y las notas del bajo y las pasa a cuerda y traste.</small>
+        <input type="file" id="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac">
+      </label>
+      <div class="song">
+        <span class="name" id="songName">Preparando la demo…</span>
+        <span class="meta" id="songMeta">—</span>
+        <div class="bar" aria-hidden="true"><i id="anaBar"></i></div>
+      </div>
+      <button id="demoBtn" type="button">Usar la canción demo</button>
+    </section>
+
+    <section class="sec" aria-labelledby="h-diff">
+      <h2 id="h-diff">Dificultad</h2>
+      <div class="seg" role="radiogroup" aria-labelledby="h-diff">
+        <input type="radio" name="diff" id="d-easy" value="easy"><label for="d-easy">Fácil</label>
+        <input type="radio" name="diff" id="d-normal" value="normal" checked><label for="d-normal">Normal</label>
+        <input type="radio" name="diff" id="d-expert" value="expert"><label for="d-expert">Experto</label>
+      </div>
+      <p class="hint" id="diffHint">Pisa el traste y puntea la cuerda. Hay un traste de margen.</p>
+    </section>
+
+    <section class="sec" aria-labelledby="h-play">
+      <h2 id="h-play">Tocar</h2>
+      <div class="seg two" role="radiogroup" aria-label="Tipo de sesión">
+        <input type="radio" name="xrmode" id="x-ar" value="ar" checked><label for="x-ar">Realidad mixta</label>
+        <input type="radio" name="xrmode" id="x-vr" value="vr"><label for="x-vr">Escenario VR</label>
+      </div>
+      <div class="btns">
+        <button class="primary" id="playBtn" type="button">Tocar</button>
+        <button id="restartBtn" type="button">Reiniciar</button>
+        <button class="starbtn" id="starBtn" type="button">Poder estelar</button>
+        <button id="calibBtn" type="button">Calibrar bajo</button>
+        <button class="vr wide" id="vrBtn" type="button" disabled>Entrar en realidad mixta</button>
+      </div>
+      <p class="vrnote" id="vrNote">Comprobando si este navegador admite realidad mixta…</p>
+      <div class="score" aria-live="polite">
+        <div><b id="sScore">0</b><span>Puntos</span></div>
+        <div><b id="sStreak">0</b><span>Racha</span></div>
+        <div><b id="sMult">×1</b><span>Multiplicador</span></div>
+      </div>
+      <p class="result" id="result" hidden></p>
+    </section>
+
+    <section class="sec" aria-labelledby="h-mix">
+      <h2 id="h-mix">Mezcla y opciones</h2>
+      <div class="ctrl"><label for="volSong">Volumen de la canción</label><output id="oSong">80%</output><input type="range" id="volSong" min="0" max="100" value="80"></div>
+      <div class="ctrl"><label for="volBass">Volumen de tus notas</label><output id="oBass">85%</output><input type="range" id="volBass" min="0" max="100" value="85"></div>
+      <div class="ctrl"><label for="offset">Ajuste de sincronía</label><output id="oOff">0 ms</output><input type="range" id="offset" min="-250" max="250" step="5" value="0"></div>
+      <label class="check"><input type="checkbox" id="cutBass"> Atenuar el bajo original de la canción para que solo suene el tuyo</label>
+      <label class="check"><input type="checkbox" id="canFail" checked> Se puede fallar la canción si el público se queda en cero</label>
+    </section>
+
+    <details open>
+      <summary>Cómo se juega</summary>
+      <dl class="keys">
+        <dt>Calibrar</dt><dd>Dentro del visor pulsa «Calibrar bajo» y toca con el índice los 4 puntos del dibujo. Quédate quieto 1 segundo en cada uno. La app mide la escala de tu bajo.</dd>
+        <dt>Mando</dt><dd>Para que el diapasón siga al bajo cuando lo mueves, sujeta un mando al clavijero con una goma o un soporte y calibra con él puesto.</dd>
+        <dt>Notas</dt><dd>Las fichas vuelan hacia tu diapasón y se posan en la cuerda y el traste. Pisa ese traste y puntea esa cuerda cuando llegue.</dd>
+        <dt>Sostenidas</dt><dd>Si la ficha tiene cola, mantén el dedo en el traste hasta que termine.</dd>
+        <dt>Racha</dt><dd>Cada 10 notas seguidas sube el multiplicador, hasta ×6.</dd>
+        <dt>Estrellas</dt><dd>Completa las frases de fichas brillantes. Con la mitad del poder estelar, levanta el clavijero hacia arriba o sube una mano a la altura de la cara.</dd>
+        <dt>Botones</dt><dd>Junto al marcador flotan Tocar, Reiniciar, Calibrar y Poder estelar. Púlsalos con la punta del dedo.</dd>
+        <dt>Pantalla</dt><dd>Sin visor, el ratón sobre el mástil elige el traste y <kbd>D</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>K</kbd> puntean E A D G. <kbd>Espacio</kbd> activa el poder estelar e <kbd>Intro</kbd> pausa.</dd>
+      </dl>
+    </details>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="loading" id="loading">Afinando…</div>
+    <div class="touchbar" aria-hidden="true">
+      <span style="color:var(--e);border-color:var(--e)">D · E</span><span style="color:var(--a);border-color:var(--a)">F · A</span><span style="color:var(--d);border-color:var(--d)">J · D</span><span style="color:var(--g);border-color:var(--g)">K · G</span>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script>
+// ===== Analizador: convierte cualquier canción en una partitura de bajo =====
+const BassAnalyzer = (() => {
+  const tick = () => new Promise(r => setTimeout(r, 0));
+
+  function lowpassInPlace(x, sr, fc, q) {
+    q = q || 0.7071;
+    const w0 = 2 * Math.PI * fc / sr, cs = Math.cos(w0), al = Math.sin(w0) / (2 * q), a0 = 1 + al;
+    const b0 = (1 - cs) / 2 / a0, b1 = (1 - cs) / a0, b2 = b0, a1 = -2 * cs / a0, a2 = (1 - al) / a0;
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (let i = 0; i < x.length; i++) {
+      const x0 = x[i];
+      const y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+      x2 = x1; x1 = x0; y2 = y1; y1 = y0; x[i] = y0;
+    }
+  }
+
+  // YIN: frecuencia fundamental en la ventana que empieza en `start`
+  function yin(y, start, fs, fmin, fmax, winSec) {
+    const W = Math.round(fs * (winSec || 0.045));
+    const tauMax = Math.floor(fs / fmin), tauMin = Math.max(2, Math.floor(fs / fmax));
+    if (start < 0 || start + W + tauMax + 2 >= y.length) return null;
+    const d = new Float32Array(tauMax + 2);
+    for (let tau = 1; tau <= tauMax + 1; tau++) {
+      let s = 0;
+      for (let j = 0; j < W; j++) { const df = y[start + j] - y[start + j + tau]; s += df * df; }
+      d[tau] = s;
+    }
+    const cm = new Float32Array(tauMax + 2); cm[0] = 1;
+    let run = 0;
+    for (let tau = 1; tau <= tauMax + 1; tau++) { run += d[tau]; cm[tau] = run > 0 ? d[tau] * tau / run : 1; }
+    let tau = -1;
+    for (let t = tauMin; t <= tauMax; t++) {
+      if (cm[t] < 0.18) { while (t + 1 <= tauMax && cm[t + 1] < cm[t]) t++; tau = t; break; }
+    }
+    if (tau < 0) { let best = 1e9; for (let t = tauMin; t <= tauMax; t++) if (cm[t] < best) { best = cm[t]; tau = t; } }
+    let tf = tau;
+    if (tau > 1 && tau < tauMax + 1) {
+      const a = cm[tau - 1], b = cm[tau], c = cm[tau + 1], den = a - 2 * b + c;
+      if (Math.abs(den) > 1e-9) tf = tau + 0.5 * (a - c) / den;
+    }
+    return { f: fs / tf, conf: Math.max(0, 1 - cm[tau]) };
+  }
+
+  // Núcleo puro: señal mono + frecuencia de muestreo -> eventos
+  async function analyzeMono(mono, sr, onProgress) {
+    const prog = onProgress || (() => {});
+    lowpassInPlace(mono, sr, 260); await tick(); prog(0.25);
+    lowpassInPlace(mono, sr, 260); await tick(); prog(0.4);
+    const dec = Math.max(1, Math.floor(sr / 11025)), fs = sr / dec;
+    const M = Math.floor(mono.length / dec), y = new Float32Array(M);
+    for (let i = 0; i < M; i++) y[i] = mono[i * dec];
+
+    // Energía por bloques y flujo de energía (logarítmico)
+    const hop = 128, win = 256, F = Math.max(0, Math.floor((M - win) / hop));
+    const E = new Float32Array(F); let maxE = 1e-12;
+    for (let i = 0; i < F; i++) { let s = 0; const o = i * hop; for (let j = 0; j < win; j++) { const v = y[o + j]; s += v * v; } E[i] = s; if (s > maxE) maxE = s; }
+    const flux = new Float32Array(F);
+    let prev = Math.log(E[0] + maxE * 1e-4);
+    for (let i = 1; i < F; i++) { const le = Math.log(E[i] + maxE * 1e-4); flux[i] = Math.max(0, le - prev); prev = le; }
+    const sorted = Array.from(flux).filter(v => v > 0).sort((a, b) => a - b);
+    const p98 = sorted.length ? sorted[Math.floor(sorted.length * 0.98)] : 1;
+    for (let i = 0; i < F; i++) flux[i] = Math.min(2, flux[i] / (p98 || 1));
+    await tick(); prog(0.55);
+
+    // Tempo por autocorrelación del flujo
+    const fps = fs / hop;
+    const minLag = Math.max(2, Math.floor(60 * fps / 190)), maxLag = Math.ceil(60 * fps / 62);
+    const ac = new Float32Array(maxLag + 2);
+    let bestLag = 0, bestScore = -1;
+    for (let lag = minLag; lag <= maxLag + 1 && lag < F; lag++) {
+      let s = 0; for (let i = 0; i + lag < F; i++) s += flux[i] * flux[i + lag];
+      ac[lag] = s / (F - lag);
+    }
+    for (let lag = minLag; lag <= maxLag && lag < F - 1; lag++) {
+      const bpm = 60 * fps / lag, w = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 112) / 0.75, 2));
+      const sc = ac[lag] * w;
+      if (sc > bestScore) { bestScore = sc; bestLag = lag; }
+    }
+    let lagF = bestLag, bpm = null, beat0 = 0;
+    if (bestLag > 0) {
+      const a = ac[bestLag - 1], b = ac[bestLag], c = ac[bestLag + 1], den = a - 2 * b + c;
+      if (Math.abs(den) > 1e-12) lagF = bestLag + Math.max(-0.5, Math.min(0.5, 0.5 * (a - c) / den));
+      bpm = 60 * fps / lagF;
+      let bp = 0, bs = -1;
+      for (let p = 0; p < bestLag; p++) { let s = 0; for (let k = p; k < F; k += lagF) s += flux[Math.round(k)] || 0; if (s > bs) { bs = s; bp = p; } }
+      beat0 = (bp * hop + hop) / fs;
+    }
+    await tick(); prog(0.65);
+
+    // Detección de ataques
+    const peaks = [];
+    const R = 12;
+    let acc = 0; for (let i = 0; i < Math.min(F, 2 * R + 1); i++) acc += flux[i];
+    for (let i = 0; i < F; i++) {
+      const lo = i - R - 1, hi = i + R;
+      if (lo >= 0) acc -= flux[lo];
+      if (hi < F && i > R) acc += flux[hi];
+      const mean = acc / (2 * R + 1);
+      const v = flux[i];
+      if (v < 0.14 || v < mean * 1.35 + 0.04) continue;
+      if (E[i] < maxE * 2e-4) continue;
+      let isMax = true;
+      for (let k = Math.max(0, i - 3); k <= Math.min(F - 1, i + 3); k++) if (flux[k] > v || (flux[k] === v && k < i)) { isMax = false; break; }
+      if (!isMax) continue;
+      const t = (i * hop + hop * 0.5) / fs;
+      if (peaks.length && t - peaks[peaks.length - 1].time < 0.06) continue;
+      peaks.push({ time: t, strength: v, frame: i });
+    }
+    await tick(); prog(0.75);
+
+    // Tono de cada ataque
+    const events = [];
+    for (let k = 0; k < peaks.length; k++) {
+      const p = peaks[k];
+      // Varias ventanas tras el ataque: el bombo se apaga antes que el bajo
+      const nextT = k + 1 < peaks.length ? peaks[k + 1].time : p.time + 1;
+      const votes = {};
+      let midi = null, conf = 0;
+      for (const off of [0.035, 0.07, 0.11, 0.15]) {
+        if (p.time + off + 0.06 > nextT && off > 0.035) break;
+        const r = yin(y, Math.round((p.time + off) * fs), fs, 38, 230);
+        if (!r || !isFinite(r.f) || r.f < 30 || r.conf < 0.4) continue;
+        const m = Math.round(69 + 12 * Math.log2(r.f / 440));
+        votes[m] = (votes[m] || 0) + r.conf * (off > 0.05 ? 1.15 : 1);
+      }
+      for (const m in votes) { if (votes[m] > conf) { conf = votes[m]; midi = +m; } }
+      const nv = Object.keys(votes).length;
+      conf = nv ? Math.min(1, conf / Math.max(1, Object.values(votes).reduce((a, b) => a + b, 0)) * Math.min(1, conf)) : 0;
+      // Ajuste suave a la rejilla rítmica
+      let time = p.time;
+      if (bpm) {
+        const step = 60 / bpm / 4, g = beat0 + Math.round((time - beat0) / step) * step;
+        if (Math.abs(g - time) < 0.03) time = g;
+        const onBeat = Math.abs(((time - beat0) / (60 / bpm)) - Math.round((time - beat0) / (60 / bpm))) < 0.12;
+        if (onBeat) p.strength *= 1.4;
+      }
+      // Duración aproximada: hasta que la energía cae o llega el siguiente ataque
+      let pk = p.frame, pe = E[pk];
+      for (let j = pk; j < Math.min(F, pk + 6); j++) if (E[j] > pe) { pe = E[j]; pk = j; }
+      const nextF = k + 1 < peaks.length ? peaks[k + 1].frame : F;
+      let j = pk; while (j < nextF - 1 && E[j] > pe * 0.12) j++;
+      const dur = Math.max(0.05, (j - p.frame) * hop / fs);
+      events.push({ time, strength: p.strength, midi, conf, dur });
+      if (k % 200 === 0) { await tick(); prog(0.75 + 0.22 * k / peaks.length); }
+    }
+    // Rellenar notas dudosas con la vecina segura más cercana
+    const good = events.filter(e => e.midi != null && e.conf > 0.55);
+    let fallback = 28;
+    if (good.length) {
+      const hist = {}; good.forEach(e => { const pc = ((e.midi % 12) + 12) % 12; hist[pc] = (hist[pc] || 0) + 1; });
+      const pc = +Object.keys(hist).sort((a, b) => hist[b] - hist[a])[0];
+      fallback = 28 + ((pc - 4 + 12) % 12);
+    }
+    let last = null;
+    for (const e of events) {
+      if (e.midi != null && e.conf > 0.55) { last = e.midi; continue; }
+      e.midi = last != null ? last : fallback;
+    }
+    for (const e of events) { while (e.midi < 28) e.midi += 12; while (e.midi > 55) e.midi -= 12; }
+    prog(1);
+    return { events, bpm: bpm ? Math.round(bpm * 10) / 10 : null, beat0 };
+  }
+
+  async function analyzeBuffer(buffer, onProgress) {
+    const ch = buffer.numberOfChannels, N = buffer.length;
+    const mono = new Float32Array(N);
+    for (let c = 0; c < ch; c++) { const d = buffer.getChannelData(c); for (let i = 0; i < N; i++) mono[i] += d[i] / ch; }
+    await tick(); onProgress && onProgress(0.1);
+    return analyzeMono(mono, buffer.sampleRate, onProgress);
+  }
+
+  return { analyzeBuffer, analyzeMono, yin };
+})();
+if (typeof module !== 'undefined') module.exports = BassAnalyzer;
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+
+// ================= Constantes =================
+const STR = [
+  { n: 'E', midi: 28, col: '#e5484d', key: 'd' },
+  { n: 'A', midi: 33, col: '#f5c542', key: 'f' },
+  { n: 'D', midi: 38, col: '#3e8ef7', key: 'j' },
+  { n: 'G', midi: 43, col: '#f08a24', key: 'k' },
+];
+const STAR_COL = '#59c8ff';
+const NFRET = 15;                 // trastes dibujados
+const MAXF = 12;                  // trastes usados por las partituras
+const LOOK = 2.2;                 // segundos que se ven venir las fichas
+const DEPTH = 0.5;                // distancia desde la que llegan (m)
+const SPEED = DEPTH / LOOK;
+const SUS_MIN = 0.45, MAX_MULT = 6;
+const PRESS_H = 0.009;            // altura máxima del dedo sobre las cuerdas para contar como pisado (m)
+const TIPS = ['thumb-tip', 'index-finger-tip', 'middle-finger-tip', 'ring-finger-tip', 'pinky-finger-tip'];
+
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const DIFF = {
+  easy:   { gap: 0.42, win: 0.17, tol: 1, drain: 0.035, label: 'Fácil',   hint: 'Solo digitación: basta con pisar el traste correcto cuando llega la ficha, sin puntear. Sin visor cuenta solo la cuerda.' },
+  normal: { gap: 0.20, win: 0.14, tol: 1, drain: 0.055, label: 'Normal',  hint: 'Pisa el traste y puntea la cuerda. Hay un traste de margen.' },
+  expert: { gap: 0.09, win: 0.10, tol: 0, drain: 0.075, label: 'Experto', hint: 'Todas las notas detectadas. Traste exacto y punteo en la cuerda correcta.' },
+};
+
+const app = {
+  state: 'idle', diff: 'normal', xrMode: 'ar', anchor: 'fixed', anchorSide: 'left', offsetMs: 0, canFail: true, synthOn: true, showBoard: true,
+  score: 0, streak: 0, best: 0, hits: 0, judged: 0, rock: 0.5, star: 0, starOn: false, missPtr: 0, hoverFret: 0,
+};
+let song = null, demoSong = null, chart = [], phrases = {};
+let holding = [];
+const keysDown = [false, false, false, false];
+
+let toastTimer = 0;
+function toast(msg, ms) {
+  const el = $('#toast'); el.textContent = msg; el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, ms || 3200);
+}
+const fmtTime = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+// ================= Geometría del mástil =================
+// Sistema local del mástil: x a lo largo (cejuela = 0, puente = escala), y a través (Mi = 0 hacia Sol), z perpendicular.
+// "face" es el lado de las cuerdas, por donde llegan las fichas: z * faceSign > 0.
+const neck = { S: 0.864, w0: 0.034, w12: 0.044, faceSign: 1, calibrated: false };
+const fretPos = f => neck.S * (1 - Math.pow(2, -f / 12));
+const spAt = d => (neck.w0 + (neck.w12 - neck.w0) * d / (neck.S / 2)) / 3;
+const targetX = f => f === 0 ? fretPos(1) * 0.5 : fretPos(f) - 0.32 * (fretPos(f) - fretPos(f - 1));
+function fretFromD(d) { if (d <= 0.004) return 0; for (let f = 1; f <= NFRET; f++) if (d <= fretPos(f)) return f; return NFRET; }
+const neckMatrix = new THREE.Matrix4(), neckInv = new THREE.Matrix4(), anchorOffset = new THREE.Matrix4();
+
+// ================= Audio =================
+let ctx = null, musicGain, synthGain, bassCut, srcNode = null, startAt = 0;
+const voices = [null, null, null, null];
+function ensureCtx() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    bassCut = ctx.createBiquadFilter(); bassCut.type = 'highpass'; bassCut.frequency.value = 10; bassCut.Q.value = 0.6;
+    musicGain = ctx.createGain(); bassCut.connect(musicGain); musicGain.connect(ctx.destination);
+    synthGain = ctx.createGain(); synthGain.connect(ctx.destination);
+    applyMix();
+  }
+  if (ctx.state === 'suspended' && app.state !== 'paused') ctx.resume();
+  return ctx;
+}
+function applyMix() {
+  if (!ctx) return;
+  musicGain.gain.value = Math.pow($('#volSong').value / 100, 1.6);
+  synthGain.gain.value = Math.pow($('#volBass').value / 100, 1.6) * 0.9;
+  bassCut.frequency.setTargetAtTime($('#cutBass').checked ? 190 : 10, ctx.currentTime, 0.05);
+}
+function synthVoice(midi) {
+  const c = ensureCtx(), t = c.currentTime, f = mtof(midi);
+  const o1 = c.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = f;
+  const o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = f;
+  const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 3;
+  lp.frequency.setValueAtTime(2200, t); lp.frequency.exponentialRampToValueAtTime(420, t + 0.22);
+  const g1 = c.createGain(); g1.gain.value = 0.35;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.005); g.gain.exponentialRampToValueAtTime(0.25, t + 0.25);
+  g.gain.setTargetAtTime(0.0001, t + 1.4, 0.12);
+  o1.connect(g1); g1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(synthGain);
+  o1.start(t); o2.start(t); o1.stop(t + 2.5); o2.stop(t + 2.5);
+  return { stop() { const n = c.currentTime; g.gain.cancelScheduledValues(n); g.gain.setTargetAtTime(0.0001, n, 0.04); } };
+}
+function sound(s, fret) {
+  if (!app.synthOn) return;
+  if (voices[s]) voices[s].stop();
+  voices[s] = synthVoice(STR[s].midi + fret);
+}
+
+// ================= Pistas sintetizadas: demo y lecciones =================
+async function makeTrack(o) {
+  const beat = 60 / o.bpm, sr = 44100, intro = o.intro || 1;
+  const dur = (intro + o.bars) * 4 * beat + 2.5, N = Math.ceil(dur * sr);
+  const out = new Float32Array(N);
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 1073741823.5 - 1; };
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  const add = (t, len, fn) => { const s0 = Math.floor(t * sr), n = Math.min(Math.floor(len * sr), N - s0); for (let i = 0; i < n; i++) out[s0 + i] += fn(i / sr); };
+  const kick = t => { let ph = 0; add(t, 0.35, x => { ph += (45 + 105 * Math.exp(-x / 0.04)) / sr; return 0.8 * Math.exp(-x / 0.09) * Math.sin(2 * Math.PI * ph); }); };
+  const hiNoise = (t, len, tau, amp) => { let lp = 0; add(t, len, x => { const w = rnd(); lp += 0.35 * (w - lp); return (w - lp) * amp * Math.exp(-x / tau); }); };
+  const snare = t => { hiNoise(t, 0.18, 0.045, 0.32); add(t, 0.12, x => 0.22 * Math.exp(-x / 0.03) * (2 * Math.abs(2 * ((x * 190) % 1) - 1) - 1)); };
+  const hat = (t, a) => hiNoise(t, 0.05, 0.012, a || 0.16);
+  const click = (t, acc) => { const f = acc ? 1760 : 1320; add(t, 0.04, x => (((x * f) % 1) < 0.5 ? 1 : -1) * Math.exp(-x / 0.008) * (acc ? 0.14 : 0.09)); };
+  const pad = (t, notes, len, amp) => notes.forEach(m => { const f = mtof(m); add(t, len, x => { const e = Math.min(1, x / 0.25, (len - x) / 0.2); return amp * Math.max(0, e) * (2 * Math.abs(2 * ((x * f) % 1) - 1) - 1); }); });
+  const bass = (t, m, len, vel) => {
+    const f = mtof(m); let y1 = 0, y2 = 0, ph = 0;
+    add(t, len + 0.35, x => {
+      ph += f / sr; if (ph >= 1) ph -= 1;
+      const saw = 2 * ph - 1, sine = Math.sin(2 * Math.PI * ph);
+      const fc = 420 + 1780 * Math.exp(-x / 0.08), a = 1 - Math.exp(-2 * Math.PI * fc / sr);
+      y1 += a * (saw * 0.35 + sine - y1); y2 += a * (y1 - y2);
+      let env = x < 0.005 ? x / 0.005 : 0.45 + 0.55 * Math.exp(-(x - 0.005) / 0.09);
+      if (x > len) env *= Math.exp(-(x - len) / 0.06);
+      return y2 * env * 0.5 * vel;
+    });
+  };
+  for (let k = 0; k < intro * 4; k++) click(k * beat, k % 4 === 0);
+  for (let b = 0; b < o.bars; b++) {
+    const t0 = (intro + b) * 4 * beat;
+    if (o.drums === 'rock') {
+      kick(t0); kick(t0 + 2 * beat); if (b % 2 === 1 && b >= 16) kick(t0 + 2.5 * beat);
+      snare(t0 + beat); snare(t0 + 3 * beat);
+      for (let e = 0; e < 8; e++) hat(t0 + e * beat / 2, e % 2 ? 0.1 : 0.16);
+    } else { for (let k = 0; k < 4; k++) click(t0 + k * beat, k === 0); kick(t0); hat(t0 + 2 * beat, 0.12); snare(t0 + beat); snare(t0 + 3 * beat); }
+  }
+  await tick();
+  (o.pads || []).forEach(p => pad((intro * 4 + p.beat) * beat, p.notes, p.len * beat, p.amp));
+  await tick();
+  const events = [];
+  o.notes.forEach(n => {
+    const t = (intro * 4 + n.beat) * beat, midi = n.midi != null ? n.midi : STR[n.s].midi + n.f;
+    bass(t, midi, n.len * beat * 0.88, o.guide == null ? 0.9 : o.guide);
+    events.push({ time: t, midi, s: n.s, f: n.f, dur: n.len * beat * 0.88, strength: n.strength != null ? n.strength : (n.beat % 4 === 0 ? 1 : n.beat % 1 === 0 ? 0.8 : 0.55) });
+  });
+  let peak = 1e-6; for (let i = 0; i < N; i++) { const v = Math.abs(out[i]); if (v > peak) peak = v; }
+  const g = 0.85 / peak; for (let i = 0; i < N; i++) out[i] *= g;
+  let buffer;
+  try { buffer = new AudioBuffer({ length: N, numberOfChannels: 2, sampleRate: sr }); }
+  catch (e) { buffer = new OfflineAudioContext(2, 1, sr).createBuffer(2, N, sr); }
+  buffer.copyToChannel(out, 0); buffer.copyToChannel(out, 1);
+  return { buffer, events, bpm: o.bpm, beat0: 0, name: o.name, fixed: !!o.fixed };
+}
+function demoSpec() {
+  const prog = [[28, [52, 55, 59]], [36, [52, 55, 60]], [31, [50, 55, 59]], [38, [50, 54, 57]]];
+  const pats = [
+    [[0, 0, 3], [3, 0, 1], [4, 0, 2], [6, 7, 2]],
+    [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 7], [7, 12]],
+    [[0, 0], [2, 0], [3, 7], [4, 0], [5, 10], [6, 7], [7, 12]],
+  ];
+  const notes = [], pads = [], bars = 24;
+  for (let b = 0; b < bars; b++) {
+    const ch = prog[b % 4], pat = pats[b < 8 ? 0 : b < 16 ? 1 : 2];
+    pads.push({ beat: b * 4, notes: ch[1], len: 4, amp: b < 8 ? 0.035 : 0.05 });
+    pat.forEach(([e, iv, ln], i) => {
+      const next = i + 1 < pat.length ? pat[i + 1][0] : 8;
+      notes.push({ beat: b * 4 + e / 2, midi: ch[0] + iv, len: (ln || (next - e)) / 2 });
+    });
+  }
+  notes.push({ beat: bars * 4, midi: 28, len: 3, strength: 1 });
+  return { name: 'Demo · Groove en Mi menor', bpm: 100, intro: 2, bars: bars + 1, drums: 'rock', notes, pads };
+}
+// Lecciones con cuerda y traste fijos: [cuerda, traste]
+const seq = (steps, len) => steps.map((sf, i) => ({ beat: i * len, s: sf[0], f: sf[1], len }));
+const rep = (a, n) => Array.from({ length: n }, () => a).flat();
+const LESSONS = [
+  { name: 'Cuerdas al aire', meta: '70 BPM · negras', bpm: 70, build: () => seq([...rep([[0, 0]], 4), ...rep([[1, 0]], 4), ...rep([[2, 0]], 4), ...rep([[3, 0]], 4), [3, 0], [2, 0], [1, 0], [0, 0], [0, 0], [1, 0], [2, 0], [3, 0]], 1) },
+  { name: 'Primeros trastes', meta: '75 BPM · negras', bpm: 75, build: () => seq(rep([[0, 0], [0, 3], [1, 0], [1, 3], [2, 0], [2, 2], [1, 3], [0, 3]], 3), 1) },
+  { name: 'Cromático 1-2-3-4', meta: '80 BPM · negras', bpm: 80, build: () => { const up = [], dn = []; for (let s = 0; s < 4; s++) for (let f = 1; f <= 4; f++) up.push([s, f]); for (let s = 3; s >= 0; s--) for (let f = 4; f >= 1; f--) dn.push([s, f]); return seq([...up, ...dn], 1); } },
+  { name: 'Pentatónica de Mi', meta: '85 BPM · corcheas', bpm: 85, build: () => { const up = [[0, 0], [0, 3], [1, 0], [1, 2], [2, 0], [2, 2], [3, 0], [3, 2]]; const one = [...up, ...up.slice().reverse()]; return seq(rep(one, 3), 0.5); } },
+  { name: 'Raíz y quinta', meta: '90 BPM · negras', bpm: 90, build: () => seq(rep([[0, 0], [0, 0], [1, 2], [1, 2], [0, 3], [0, 3], [2, 0], [2, 0], [1, 0], [1, 0], [2, 2], [2, 2], [1, 3], [1, 3], [2, 5], [2, 5]], 2), 1) },
+];
+async function loadLesson(Ls, btn) {
+  if (busy) return; busy = true; markLesson(btn);
+  $('#songName').textContent = Ls.name; $('#songMeta').textContent = 'Preparando la lección…';
+  try {
+    const notes = Ls.build(), last = notes[notes.length - 1];
+    notes.push({ beat: last.beat + last.len, s: 0, f: 0, len: 3 });
+    const s = await makeTrack({ name: 'Lección · ' + Ls.name, bpm: Ls.bpm, intro: 1, bars: Math.ceil((last.beat + last.len + 3) / 4), drums: 'click', notes, guide: 0.55, fixed: true });
+    useSong(s); toast(`Lección lista: ${Ls.name}. Pulsa «Tocar».`);
+  } catch (e) { $('#songMeta').textContent = 'No se pudo preparar la lección.'; }
+  busy = false;
+}
+
+// ================= Partitura: notas → cuerda y traste =================
+function buildChart(s, dk) {
+  let kept;
+  if (s.fixed) kept = s.events.slice();
+  else {
+    const gap = DIFF[dk].gap;
+    const order = s.events.map((e, i) => i).sort((a, b) => s.events[b].strength - s.events[a].strength);
+    const times = []; kept = [];
+    for (const i of order) {
+      const t = s.events[i].time; let lo = 0, hi = times.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (times[m] < t) lo = m + 1; else hi = m; }
+      if ((lo > 0 && t - times[lo - 1] < gap) || (lo < times.length && times[lo] - t < gap)) continue;
+      times.splice(lo, 0, t); kept.push(s.events[i]);
+    }
+  }
+  kept.sort((a, b) => a.time - b.time);
+  let hand = 2;
+  const notes = kept.map((e, i) => {
+    let st, fr;
+    if (e.s != null) { st = e.s; fr = e.f; }
+    else {
+      let m = e.midi; while (m < 28) m += 12; while (m > 28 + 15 + MAXF) m -= 12;
+      let best = null, bc = 1e9;
+      for (let k = 0; k < 4; k++) {
+        const f = m - STR[k].midi; if (f < 0 || f > MAXF) continue;
+        const c = (f === 0 ? 0.6 : Math.abs(f - hand)) + f * 0.06 + (f > 0 && Math.abs(f - hand) > 4 ? 2 : 0);
+        if (c < bc) { bc = c; best = { k, f }; }
+      }
+      if (!best) best = { k: 0, f: 0 };
+      st = best.k; fr = best.f; if (fr > 0) hand = hand * 0.4 + fr * 0.6;
+    }
+    const next = i + 1 < kept.length ? kept[i + 1].time : e.time + 10;
+    let dur = Math.min(e.dur || 0, next - e.time - 0.12); if (dur < SUS_MIN) dur = 0;
+    return { time: e.time, s: st, f: fr, dur, result: null, star: 0, hold: null };
+  });
+  const bar = s.bpm ? 240 / s.bpm : 2.4, ph = {};
+  let id = 0, nextStart = notes.length ? notes[0].time + 3 * bar : 0;
+  for (let i = 0; i < notes.length; i++) {
+    if (notes[i].time < nextStart) continue;
+    const end = notes[i].time + 2 * bar; let c = 0;
+    for (let j = i; j < notes.length && notes[j].time < end && c < 10; j++, c++) notes[j].star = id + 1;
+    if (c >= 3) { id++; ph[id] = { count: c, done: 0, missed: false }; } else for (let j = i; j < i + c; j++) notes[j].star = 0;
+    nextStart = notes[i].time + 8 * bar; i += Math.max(0, c - 1);
+  }
+  return { notes, phrases: ph };
+}
+function rebuildChart() { if (!song) return; const r = buildChart(song, app.diff); chart = r.notes; phrases = r.phrases; resetScore(); updateSongCard(); }
+function resetScore() {
+  for (const n of chart) { n.result = null; n.hold = null; }
+  for (const k in phrases) { phrases[k].done = 0; phrases[k].missed = false; }
+  holding = [];
+  Object.assign(app, { score: 0, streak: 0, best: 0, hits: 0, judged: 0, rock: 0.5, star: 0, starOn: false, missPtr: 0 });
+  $('#result').hidden = true; panelsDirty = true; updateScoreUI();
+}
+function updateSongCard() {
+  if (!song) return;
+  $('#songName').textContent = song.name;
+  const parts = []; if (song.bpm) parts.push(Math.round(song.bpm) + ' BPM');
+  parts.push(chart.length + ' notas'); parts.push(fmtTime(song.buffer.duration));
+  $('#songMeta').textContent = parts.join(' · ');
+}
+
+// ================= Escena =================
+let renderer, scene, camera, root, env, neckRoot, neckVis, hud, leftP, rightP, msgP, dock, dockBtns = [], raycaster, hitPlane;
+let strMats, strGlow, starMats, starOnMat, grayMat;
+const pool = [], rings = [], bursts = [], popups = [], pressDots = [], fingerDots = [], stringLines = [];
+const fretLabelMat = [], starLabelMat = [], popupMat = {};
+let nextCell, pluckZone, calibPanel, calibCtx, calibTex, cursors = [], calibMarks = [];
+let crowdBody, crowdHead, crowdData = [], spots = [];
+let panelsDirty = true, panelsLast = 0;
+const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3(), tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpS = new THREE.Vector3(1, 1, 1);
+const L = (d, s, h) => new THREE.Vector3(d, s * spAt(d), h * neck.faceSign);
+
+function makeCanvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return new THREE.CanvasTexture(c); }
+function textTex(text, w, h, font, color, opts) {
+  return makeCanvasTex(w, h, (g) => {
+    if (opts && opts.bg) { g.fillStyle = opts.bg; g.beginPath(); g.arc(w / 2, h / 2, Math.min(w, h) / 2 - 2, 0, Math.PI * 2); g.fill(); }
+    g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (opts && opts.stroke) { g.lineWidth = opts.strokeW || 8; g.strokeStyle = opts.stroke; g.lineJoin = 'round'; g.strokeText(text, w / 2, h / 2 + 2); }
+    g.fillStyle = color; g.fillText(text, w / 2, h / 2 + 2);
+  });
+}
+const sprite = (mat, sx, sy) => { const s = new THREE.Sprite(mat); s.scale.set(sx, sy, 1); return s; };
+function canvasPanel(w, h, pw, ph) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const tex = new THREE.CanvasTexture(c);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }));
+  m.userData = { c, g: c.getContext('2d'), tex, w, h }; m.renderOrder = 6;
+  return m;
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+
+function buildScene() {
+  const stage = $('#stage');
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.xr.enabled = true;
+  renderer.xr.setReferenceSpaceType('local-floor');
+  stage.prepend(renderer.domElement);
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0c0b12);
+  scene.fog = new THREE.Fog(0x0c0b12, 6, 22);
+  camera = new THREE.PerspectiveCamera(58, 1, 0.02, 80);
+  scene.add(new THREE.HemisphereLight(0xc6ccff, 0x2a1c12, 0.95));
+  const dl = new THREE.DirectionalLight(0xfff0dd, 0.8); dl.position.set(0.5, 3, 2); scene.add(dl);
+  root = new THREE.Group(); scene.add(root);
+  buildEnv();
+
+  strMats = STR.map(s => new THREE.MeshStandardMaterial({ color: s.col, emissive: s.col, emissiveIntensity: 0.5, roughness: 0.35 }));
+  strGlow = STR.map(s => new THREE.MeshStandardMaterial({ color: s.col, emissive: s.col, emissiveIntensity: 1.4, roughness: 0.3 }));
+  starMats = STR.map(s => new THREE.MeshStandardMaterial({ color: s.col, emissive: STAR_COL, emissiveIntensity: 0.9, roughness: 0.25, metalness: 0.2 }));
+  starOnMat = new THREE.MeshStandardMaterial({ color: STAR_COL, emissive: STAR_COL, emissiveIntensity: 0.9, roughness: 0.3 });
+  grayMat = new THREE.MeshStandardMaterial({ color: 0x45424f, roughness: 0.8 });
+  for (let f = 0; f <= NFRET; f++) {
+    fretLabelMat[f] = new THREE.SpriteMaterial({ map: textTex(String(f), 128, 128, '800 88px "Barlow Condensed", "Arial Narrow", sans-serif', '#ffffff', { stroke: 'rgba(12,11,18,.9)', strokeW: 16 }), transparent: true, depthWrite: false, depthTest: false, fog: false });
+    starLabelMat[f] = new THREE.SpriteMaterial({ map: textTex('★' + f, 192, 128, '800 84px "Barlow Condensed", "Arial Narrow", sans-serif', '#bfe9ff', { stroke: 'rgba(12,11,18,.9)', strokeW: 16 }), transparent: true, depthWrite: false, depthTest: false, fog: false });
+  }
+  const words = { perfect: ['PERFECTO', '#f2a541'], good: ['BIEN', '#ece6d8'], fret: ['TRASTE', '#e5484d'], string: ['OTRA CUERDA', '#e5484d'] };
+  for (const k in words) popupMat[k] = new THREE.SpriteMaterial({ map: textTex(words[k][0], 512, 128, '800 84px "Barlow Condensed", sans-serif', words[k][1], { stroke: 'rgba(12,11,18,.85)', strokeW: 12 }), transparent: true, depthWrite: false, depthTest: false, fog: false });
+
+  neckRoot = new THREE.Group(); neckRoot.matrixAutoUpdate = false; scene.add(neckRoot);
+  buildNeckContent();
+
+  hud = new THREE.Group(); scene.add(hud);
+  leftP = canvasPanel(512, 512, 0.24, 0.24); leftP.position.set(-0.27, 0, 0); hud.add(leftP);
+  rightP = canvasPanel(512, 512, 0.24, 0.24); rightP.position.set(0.27, 0, 0); hud.add(rightP);
+  msgP = canvasPanel(1024, 256, 0.6, 0.15); msgP.position.set(0, 0.18, 0); msgP.visible = false; hud.add(msgP);
+  buildDock(); buildCalibUI();
+
+  raycaster = new THREE.Raycaster();
+  setupXRControllers();
+  setDesktopPose();
+  const ro = new ResizeObserver(resize); ro.observe(stage); resize();
+  renderer.setAnimationLoop(frame);
+}
+
+// Contenido en el sistema del mástil (se reconstruye al calibrar)
+function buildNeckContent() {
+  if (neckVis) { neckRoot.remove(neckVis); neckVis.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  neckVis = new THREE.Group(); neckRoot.add(neckVis);
+  const fs = neck.faceSign, S = neck.S, end = fretPos(NFRET) + 0.012;
+  // Diapasón (trapecio)
+  const sh = new THREE.Shape();
+  sh.moveTo(-0.004, -0.55 * spAt(0)); sh.lineTo(end, -0.55 * spAt(end)); sh.lineTo(end, 3.55 * spAt(end)); sh.lineTo(-0.004, 3.55 * spAt(0)); sh.closePath();
+  const wood = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ color: 0x2b1d15, roughness: 0.75, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+  wood.position.z = -0.007 * fs; wood.userData.role = 'wood'; neckVis.add(wood);
+  // Cuerpo (solo en pantalla y VR completa)
+  const bs = new THREE.Shape(), cy = 1.5 * spAt(S), x0 = S * 0.64, x1 = S * 1.1;
+  bs.moveTo(x0, cy - 0.06); bs.bezierCurveTo(x0 + 0.02, cy - 0.19, S * 0.86, cy - 0.21, S * 0.98, cy - 0.15);
+  bs.bezierCurveTo(x1, cy - 0.1, x1, cy + 0.14, S * 0.98, cy + 0.18); bs.bezierCurveTo(S * 0.86, cy + 0.24, x0 + 0.04, cy + 0.2, x0, cy + 0.07); bs.closePath();
+  const body = new THREE.Mesh(new THREE.ShapeGeometry(bs), new THREE.MeshStandardMaterial({ color: 0x6e2419, roughness: 0.35, metalness: 0.15, side: THREE.DoubleSide }));
+  body.position.z = -0.012 * fs; body.userData.role = 'body'; neckVis.add(body);
+  // Trastes y cejuela
+  const fp = [];
+  for (let f = 0; f <= NFRET; f++) { const d = fretPos(f); const a = L(d, -0.5, 0.0), b = L(d, 3.5, 0.0); a.z = b.z = -0.003 * fs; fp.push(a, b); }
+  const frets = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(fp), new THREE.LineBasicMaterial({ color: 0xcfc9bc, transparent: true, opacity: 0.85 }));
+  neckVis.add(frets);
+  const nut = new THREE.Mesh(new THREE.BoxGeometry(0.006, 4 * spAt(0), 0.006), new THREE.MeshStandardMaterial({ color: 0xece6d8 }));
+  nut.position.set(-0.002, 1.5 * spAt(0), -0.002 * fs); neckVis.add(nut);
+  // Marcadores
+  const dotM = new THREE.MeshBasicMaterial({ color: 0xd9d2c2, transparent: true, opacity: 0.8 }), dotG = new THREE.CircleGeometry(0.0045, 16);
+  [3, 5, 7, 9, 15].forEach(f => { const d = (fretPos(f - 1) + fretPos(f)) / 2, m = new THREE.Mesh(dotG, dotM); m.position.copy(L(d, 1.5, 0)); m.position.z = -0.006 * fs; neckVis.add(m); });
+  [0.75, 2.25].forEach(s => { const d = (fretPos(11) + fretPos(12)) / 2, m = new THREE.Mesh(dotG, dotM); m.position.copy(L(d, s, 0)); m.position.z = -0.006 * fs; neckVis.add(m); });
+  // Números de traste junto a la cuerda Mi
+  for (let f = 1; f <= NFRET; f++) {
+    const d = (fretPos(f - 1) + fretPos(f)) / 2;
+    const m = new THREE.SpriteMaterial({ map: textTex(String(f), 128, 128, '600 70px "IBM Plex Mono", monospace', [3, 5, 7, 9, 12, 15].includes(f) ? '#ece6d8' : '#8b859a'), transparent: true, depthWrite: false });
+    const s = sprite(m, 0.016, 0.016); s.position.copy(L(d, -1.1, 0.004)); neckVis.add(s);
+  }
+  // Cuerdas
+  stringLines.length = 0;
+  STR.forEach((st, s) => {
+    const g = new THREE.BufferGeometry().setFromPoints([L(-0.03, s, 0), L(S, s, 0)]);
+    const mat = new THREE.LineBasicMaterial({ color: st.col, transparent: true, opacity: 0.9 });
+    const line = new THREE.Line(g, mat); neckVis.add(line); stringLines.push({ mat, flash: 0 });
+    const lab = sprite(new THREE.SpriteMaterial({ map: textTex(st.n, 128, 128, '800 74px "Barlow Condensed", sans-serif', '#0c0b12', { bg: st.col }), transparent: true, depthWrite: false }), 0.016, 0.016);
+    lab.position.copy(L(-0.04, s, 0)); neckVis.add(lab);
+  });
+  // Zona de punteo
+  const pz = new THREE.Shape(), p0 = S * 0.62, p1 = S * 0.97;
+  pz.moveTo(p0, -0.5 * spAt(p0)); pz.lineTo(p1, -0.5 * spAt(p1)); pz.lineTo(p1, 3.5 * spAt(p1)); pz.lineTo(p0, 3.5 * spAt(p0)); pz.closePath();
+  pluckZone = new THREE.Mesh(new THREE.ShapeGeometry(pz), new THREE.MeshBasicMaterial({ color: 0xf2a541, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
+  pluckZone.position.z = 0.001 * fs; neckVis.add(pluckZone);
+  // Celda del próximo traste
+  nextCell = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false }));
+  nextCell.visible = false; neckVis.add(nextCell);
+  // Plano invisible para el ratón
+  hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(S * 1.3, 0.3), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
+  hitPlane.position.set(S * 0.55, 1.5 * spAt(S * 0.5), 0); neckVis.add(hitPlane);
+
+  // Fichas
+  const gemGeo = new THREE.BoxGeometry(0.026, 0.017, 0.012);
+  const openGeo = new THREE.BoxGeometry(1, 0.006, 0.008);
+  const tailGeo = new THREE.BoxGeometry(1, 1, 1);
+  const stemMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, depthWrite: false });
+  pool.length = 0;
+  for (let i = 0; i < 60; i++) {
+    const gem = new THREE.Mesh(gemGeo, strMats[0]), open = new THREE.Mesh(openGeo, strMats[0]), tail = new THREE.Mesh(tailGeo, strMats[0]), stem = new THREE.Mesh(tailGeo, stemMat);
+    const label = sprite(fretLabelMat[0], 0.02, 0.02); label.renderOrder = 5;
+    [gem, open, tail, stem, label].forEach(o => { o.visible = false; neckVis.add(o); });
+    pool.push({ gem, open, tail, stem, label });
+  }
+  rings.length = 0;
+  const ringGeo = new THREE.RingGeometry(0.85, 1, 40);
+  for (let i = 0; i < 10; i++) { const r = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide, depthWrite: false })); r.visible = false; r.renderOrder = 4; neckVis.add(r); rings.push(r); }
+  bursts.length = 0;
+  for (let i = 0; i < 10; i++) { const r = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide, depthWrite: false })); r.visible = false; r.renderOrder = 4; neckVis.add(r); bursts.push({ m: r, life: 0 }); }
+  popups.length = 0;
+  for (let i = 0; i < 6; i++) { const s = sprite(popupMat.good, 0.1, 0.025); s.visible = false; s.renderOrder = 7; neckVis.add(s); popups.push({ s, life: 0 }); }
+  pressDots.length = 0;
+  for (let s = 0; s < 4; s++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.006, 14, 10), strGlow[s]); m.visible = false; neckVis.add(m); pressDots.push(m); }
+  setNeckLook();
+}
+function setNeckLook() {
+  if (!neckVis) return;
+  const mr = renderer && renderer.xr.isPresenting && app.xrMode === 'ar';
+  neckVis.children.forEach(o => {
+    if (o.userData.role === 'wood') { o.visible = !mr || app.showBoard; o.material.opacity = mr ? 0.28 : 1; }
+    if (o.userData.role === 'body') o.visible = !mr;
+  });
+  stringLines.forEach(l => { l.mat.opacity = mr && !app.showBoard ? 0.35 : 0.9; });
+}
+
+function buildEnv() {
+  env = new THREE.Group(); root.add(env);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: 0x121019, roughness: 0.95 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -1.2; env.add(floor);
+  const stageMesh = new THREE.Mesh(new THREE.BoxGeometry(10, 1.2, 7), new THREE.MeshStandardMaterial({ color: 0x1a1722, roughness: 0.8 }));
+  stageMesh.position.set(0, -0.6, -0.5); env.add(stageMesh);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(10, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xf2a541 })); edge.position.set(0, 0.01, -4); env.add(edge);
+  const ampMat = new THREE.MeshStandardMaterial({ color: 0x15131a, roughness: 0.9 }), grill = new THREE.MeshStandardMaterial({ color: 0x26232e, roughness: 1 });
+  for (const sx of [-2.6, 2.6]) {
+    const a = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.6, 0.6), ampMat); b.position.y = 0.8; a.add(b);
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 1.3), grill); f.position.set(0, 0.75, 0.301); a.add(f);
+    a.position.set(sx, 0, -1.5); a.rotation.y = sx > 0 ? -0.35 : 0.35; env.add(a);
+  }
+  const n = 150;
+  crowdBody = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.2, 0.75, 3, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }), n);
+  crowdHead = new THREE.InstancedMesh(new THREE.SphereGeometry(0.15, 10, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }), n);
+  const palette = [0x3a2f4f, 0x4a2a35, 0x2b3a4f, 0x463a2a, 0x2f2a3a, 0x52304a], c = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    const row = Math.floor(i / 25), x = (i % 25 - 12) * 0.55 + (Math.random() - 0.5) * 0.25, z = -5.6 - row * 0.9 - Math.random() * 0.3;
+    crowdData.push({ x, z, ph: Math.random() * Math.PI * 2, amp: 0.6 + Math.random() * 0.6, h: 0.95 + Math.random() * 0.15 });
+    c.setHex(palette[i % palette.length]); crowdBody.setColorAt(i, c); c.multiplyScalar(1.4); crowdHead.setColorAt(i, c);
+  }
+  env.add(crowdBody, crowdHead);
+  for (let i = 0; i < 6; i++) {
+    const col = [0xf2a541, 0x59c8ff, 0xe5484d, 0x3ccf4e, 0xb07cff, 0xf5c542][i];
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(1.1, 6, 24, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    cone.position.set((i - 2.5) * 2.2, 2.6, -7.5); cone.rotation.x = 0.25; cone.userData.col = col; env.add(cone); spots.push(cone);
+  }
+}
+
+// Pose del mástil sin visor: frente a la cámara, con el diapasón mirando arriba y adelante (como lo ve un bajista)
+function setDesktopPose() {
+  const u = new THREE.Vector3(1, 0, 0), n = new THREE.Vector3(0, 0.82, 0.57).normalize(), v = new THREE.Vector3().crossVectors(n, u);
+  neck.faceSign = 1;
+  neckMatrix.makeBasis(u, v, n).setPosition(-neck.S * 0.42, 1.02, -0.42);
+  applyNeckMatrix();
+  hud.position.set(-0.02, 1.56, -0.98); hud.rotation.set(-0.12, 0, 0);
+}
+function applyNeckMatrix() {
+  neckRoot.matrix.copy(neckMatrix); neckRoot.matrixWorldNeedsUpdate = true; neckRoot.updateMatrixWorld(true);
+  neckInv.copy(neckMatrix).invert();
+}
+function resize() {
+  if (renderer.xr.isPresenting) return;
+  const st = $('#stage'), w = st.clientWidth || 1, h = st.clientHeight || 1;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  const vf = THREE.MathUtils.degToRad(camera.fov);
+  const dist = Math.max(1.0, 0.58 / (Math.tan(vf / 2) * camera.aspect));
+  camera.position.set(-0.02, 1.02 + dist * 0.62, -0.42 + dist * 0.78);
+  camera.lookAt(-0.02, 1.2, -0.62);
+  camera.updateProjectionMatrix();
+}
+
+// ================= Marcador =================
+const baseMult = () => Math.min(MAX_MULT, 1 + Math.floor(app.streak / 10));
+const mult = () => baseMult() * (app.starOn ? 2 : 1);
+const railColors = ['#9a94a8', '#f5c542', '#3ccf4e', '#b07cff', '#ff7ad9', '#ffffff'];
+function drawPanels() {
+  let { g, w, h, tex } = leftP.userData;
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = 'rgba(21,19,29,0.86)'; rr(g, 6, 6, w - 12, h - 12, 34); g.fill();
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  g.fillStyle = '#9a94a8'; g.font = '600 30px "Barlow Condensed", sans-serif'; g.fillText('PUNTOS', w / 2, 58);
+  g.fillStyle = '#ece6d8'; g.font = '800 84px "Barlow Condensed", sans-serif'; g.fillText(String(app.score), w / 2, 136);
+  const base = baseMult(), cx = w / 2, cy = 252, R = 74;
+  g.lineWidth = 14; g.strokeStyle = '#2c2939'; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.stroke();
+  const prog = base >= MAX_MULT ? 1 : (app.streak % 10) / 10;
+  g.strokeStyle = app.starOn ? STAR_COL : railColors[base - 1]; g.beginPath(); g.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2); g.stroke();
+  g.fillStyle = app.starOn ? STAR_COL : '#ece6d8'; g.font = '800 78px "Barlow Condensed", sans-serif'; g.fillText('×' + mult(), cx, cy + 27);
+  g.fillStyle = '#9a94a8'; g.font = '600 28px "Barlow Condensed", sans-serif'; g.fillText('RACHA ' + app.streak, cx, 368);
+  const bx = 50, by = 400, bw = w - 100, bh = 30;
+  g.fillStyle = '#2c2939'; rr(g, bx, by, bw, bh, 15); g.fill();
+  if (app.star > 0.01) { g.fillStyle = STAR_COL; rr(g, bx, by, Math.max(bh, bw * app.star), bh, 15); g.fill(); }
+  g.fillStyle = '#0c0b12'; g.fillRect(bx + bw / 2 - 2, by, 4, bh);
+  g.fillStyle = app.star >= 0.5 && !app.starOn ? STAR_COL : '#9a94a8'; g.font = '600 28px "Barlow Condensed", sans-serif';
+  g.fillText(app.starOn ? '¡PODER ESTELAR!' : app.star >= 0.5 ? '¡LISTO! LEVANTA EL CLAVIJERO' : 'PODER ESTELAR', w / 2, 476);
+  tex.needsUpdate = true;
+  ({ g, w, h, tex } = rightP.userData);
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = 'rgba(21,19,29,0.86)'; rr(g, 6, 6, w - 12, h - 12, 34); g.fill();
+  g.textAlign = 'center';
+  g.fillStyle = '#9a94a8'; g.font = '600 30px "Barlow Condensed", sans-serif'; g.fillText('PÚBLICO', w / 2, 58);
+  const gx = w / 2, gy = 300, GR = 170, a0 = Math.PI * 1.1, a1 = Math.PI * 1.9;
+  g.lineWidth = 38;
+  [['#e5484d', 0, 0.33], ['#f5c542', 0.33, 0.66], ['#3ccf4e', 0.66, 1]].forEach(([c, s0, s1]) => { g.strokeStyle = c; g.globalAlpha = 0.85; g.beginPath(); g.arc(gx, gy, GR, a0 + (a1 - a0) * s0 + 0.01, a0 + (a1 - a0) * s1 - 0.01); g.stroke(); });
+  g.globalAlpha = 1;
+  const an = a0 + (a1 - a0) * app.rock;
+  g.strokeStyle = '#ece6d8'; g.lineWidth = 10; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + Math.cos(an) * (GR + 14), gy + Math.sin(an) * (GR + 14)); g.stroke(); g.lineCap = 'butt';
+  g.fillStyle = '#ece6d8'; g.beginPath(); g.arc(gx, gy, 16, 0, Math.PI * 2); g.fill();
+  const mood = app.rock < 0.33 ? ['ABUCHEOS', '#e5484d'] : app.rock < 0.66 ? ['ATENTOS', '#f5c542'] : ['¡TE AMAN!', '#3ccf4e'];
+  g.fillStyle = mood[1]; g.font = '800 64px "Barlow Condensed", sans-serif'; g.fillText(mood[0], w / 2, 390);
+  g.fillStyle = '#9a94a8'; g.font = '600 28px "Barlow Condensed", sans-serif';
+  g.fillText(app.judged ? Math.round(app.hits / app.judged * 100) + '% DE ACIERTOS' : DIFF[app.diff].label.toUpperCase(), w / 2, 450);
+  tex.needsUpdate = true;
+}
+let msgUntil = 0;
+function showMsg(text, sub, color, ms) {
+  const { g, w, h, tex } = msgP.userData;
+  g.clearRect(0, 0, w, h); g.textAlign = 'center'; g.lineJoin = 'round';
+  g.lineWidth = 14; g.strokeStyle = 'rgba(12,11,18,0.85)';
+  let fs = 120; g.font = `800 ${fs}px "Barlow Condensed", sans-serif`;
+  while (g.measureText(text).width > w - 60 && fs > 50) { fs -= 6; g.font = `800 ${fs}px "Barlow Condensed", sans-serif`; }
+  const y = sub ? 128 : 160;
+  g.strokeText(text, w / 2, y); g.fillStyle = color || '#ece6d8'; g.fillText(text, w / 2, y);
+  if (sub) { let f2 = 46; g.font = `600 ${f2}px "Barlow Condensed", sans-serif`; while (g.measureText(sub).width > w - 60 && f2 > 24) { f2 -= 2; g.font = `600 ${f2}px "Barlow Condensed", sans-serif`; } g.lineWidth = 10; g.strokeText(sub, w / 2, 206); g.fillStyle = '#ece6d8'; g.fillText(sub, w / 2, 206); }
+  tex.needsUpdate = true;
+  msgP.visible = true; msgP.material.opacity = 1;
+  msgUntil = ms === Infinity ? 0 : performance.now() + (ms || 1400);
+}
+function hideMsg() { msgP.visible = false; msgUntil = 0; }
+function updateScoreUI() { $('#sScore').textContent = app.score; $('#sStreak').textContent = app.streak; $('#sMult').textContent = '×' + mult(); }
+
+// ================= Reproducción =================
+function songTime() { if (!ctx || !srcNode) return 0; return ctx.currentTime - startAt - (ctx.outputLatency || ctx.baseLatency || 0) + app.offsetMs / 1000; }
+function stopSource() { if (srcNode) { try { srcNode.onended = null; srcNode.stop(); } catch (e) {} srcNode.disconnect(); srcNode = null; } }
+let runId = 0;
+function startSong() {
+  if (!song || calib.active) return;
+  ensureCtx(); if (ctx.state === 'suspended') ctx.resume();
+  stopSource(); resetScore(); hideMsg();
+  const src = ctx.createBufferSource(); src.buffer = song.buffer; src.connect(bassCut);
+  startAt = ctx.currentTime + 2.4; src.start(startAt);
+  src.onended = () => { if (srcNode === src) finish(); };
+  srcNode = src; setState('playing'); countdown(++runId);
+}
+async function countdown(id) {
+  for (const n of ['3', '2', '1']) { if (app.state !== 'playing' || id !== runId) return; showMsg(n, null, '#f2a541', 650); await sleep(700); }
+  if (app.state === 'playing' && id === runId) showMsg('¡A TOCAR!', null, '#3ccf4e', 700);
+}
+const starsFor = acc => acc >= 0.95 ? 5 : acc >= 0.85 ? 4 : acc >= 0.7 ? 3 : acc >= 0.5 ? 2 : 1;
+function finish() {
+  if (app.state === 'ended' || app.state === 'failed') return;
+  stopSource(); setState('ended');
+  const acc = app.judged ? app.hits / app.judged : 0, st = starsFor(acc), stars = '★'.repeat(st) + '☆'.repeat(5 - st);
+  showMsg(stars, `${Math.round(acc * 100)}% · ${app.score} puntos · racha máxima ${app.best}`, '#f2a541', Infinity);
+  const r = $('#result'); r.hidden = false; r.textContent = '';
+  const b = document.createElement('b'); b.textContent = stars; r.append(b, ` ${Math.round(acc * 100)}% de aciertos, ${app.hits} de ${chart.length} notas, racha máxima ${app.best}.`);
+}
+function fail() {
+  stopSource(); setState('failed');
+  showMsg('CANCIÓN FALLIDA', 'El público se quedó en cero. Pulsa Reiniciar.', '#e5484d', Infinity);
+  const r = $('#result'); r.hidden = false;
+  r.textContent = `Canción fallida al ${Math.round(100 * app.judged / Math.max(1, chart.length))}% del recorrido. Prueba en Fácil o desmarca «Se puede fallar».`;
+}
+function togglePlay() {
+  if (!song || calib.active) return;
+  if (app.state === 'playing') { ctx.suspend(); setState('paused'); showMsg('PAUSA', null, '#ece6d8', Infinity); }
+  else if (app.state === 'paused') { setState('playing'); ctx.resume(); hideMsg(); }
+  else startSong();
+}
+function restart() { if (song) startSong(); }
+function setState(s) { app.state = s; panelsDirty = true; $('#playBtn').textContent = s === 'playing' ? 'Pausa' : s === 'paused' ? 'Seguir' : 'Tocar'; }
+
+// ================= Reglas =================
+function lowerBound(t) { let lo = 0, hi = chart.length; while (lo < hi) { const m = (lo + hi) >> 1; if (chart[m].time < t) lo = m + 1; else hi = m; } return lo; }
+const xrHands = () => renderer.xr.isPresenting && fingers.tracked;
+const fingerOnly = () => app.diff === 'easy' && xrHands();
+function fretOk(n, fret) {
+  if (n.f === 0) return fret === 0;
+  const tol = app.diff === 'easy' && !xrHands() ? 99 : DIFF[app.diff].tol;
+  return fret > 0 && Math.abs(fret - n.f) <= tol;
+}
+function pluck(s, fret, src) {
+  sound(s, fret);
+  stringLines[s].flash = 1;
+  if (app.state !== 'playing' || fingerOnly()) return;
+  const t = songTime(), win = DIFF[app.diff].win * (src === 'hand' ? 1.2 : 1);
+  let best = null, bd = 1e9, other = null;
+  for (let i = lowerBound(t - win); i < chart.length && chart[i].time <= t + win; i++) {
+    const n = chart[i]; if (n.result) continue;
+    if (n.s !== s) { if (!other) other = n; continue; }
+    const dt = Math.abs(n.time - t); if (dt < bd) { bd = dt; best = n; }
+  }
+  if (!best) { if (other) falseNote(other, 'string'); return; }
+  if (!fretOk(best, fret)) { falseNote(best, 'fret'); return; }
+  hit(best, src, bd);
+}
+function hit(n, src, adt) {
+  n.result = 'hit';
+  const before = baseMult();
+  app.streak++; app.best = Math.max(app.best, app.streak); app.hits++; app.judged++;
+  app.score += (adt <= 0.05 ? 60 : 50) * mult();
+  app.rock = Math.min(1, app.rock + (app.starOn ? 0.04 : 0.02));
+  const p = L(targetX(n.f), n.s, 0.002);
+  burst(p, STR[n.s].col); popup(adt <= 0.05 ? 'perfect' : 'good', p);
+  stringLines[n.s].flash = 1;
+  if (n.dur > 0) { n.hold = { active: true, src, last: n.time }; holding.push(n); }
+  const after = baseMult();
+  if (after > before) showMsg('×' + after, `¡${app.streak} notas seguidas!`, railColors[after - 1], 1100);
+  else if (app.streak % 50 === 0) showMsg(`¡${app.streak} SEGUIDAS!`, null, '#f2a541', 1100);
+  phraseStep(n, false); panelsDirty = true;
+}
+function miss(n) {
+  n.result = 'miss'; app.judged++;
+  if (app.streak >= 10) showMsg('RACHA PERDIDA', null, '#e5484d', 900);
+  app.streak = 0; app.rock = Math.max(0, app.rock - DIFF[app.diff].drain);
+  phraseStep(n, true); panelsDirty = true;
+  if (app.canFail && app.rock <= 0) fail();
+}
+function falseNote(n, kind) {
+  popup(kind, L(targetX(n.f), n.s, 0.002));
+  if (app.streak >= 10) showMsg(kind === 'fret' ? 'TRASTE EQUIVOCADO' : 'OTRA CUERDA', null, '#e5484d', 800);
+  app.streak = 0; app.rock = Math.max(0, app.rock - 0.02); panelsDirty = true;
+  if (app.canFail && app.rock <= 0) fail();
+}
+function phraseStep(n, missed) {
+  if (!n.star) return; const p = phrases[n.star]; if (!p) return;
+  p.done++; if (missed) p.missed = true;
+  if (p.done === p.count && !p.missed) {
+    const before = app.star; app.star = Math.min(1, app.star + 0.25);
+    showMsg('¡FRASE ESTELAR!', before < 0.5 && app.star >= 0.5 && !app.starOn ? 'Poder estelar listo: levanta el clavijero' : null, STAR_COL, 1300);
+  }
+}
+function activateStar() {
+  if (app.state !== 'playing' || app.starOn) return;
+  if (app.star < 0.5) { toast('Necesitas al menos la mitad del poder estelar. Completa frases de fichas brillantes.'); return; }
+  app.starOn = true; panelsDirty = true;
+  showMsg('¡PODER ESTELAR!', 'Puntos dobles', STAR_COL, 1300);
+  buzzAll(0.8, 120);
+}
+function judge(t) {
+  const win = DIFF[app.diff].win * (xrHands() ? 1.2 : 1);
+  if (fingerOnly()) {
+    for (let i = lowerBound(t - win); i < chart.length && chart[i].time <= t + win; i++) {
+      const n = chart[i]; if (n.result) continue;
+      const fr = fingers.pressed[n.s];
+      const ok = n.f === 0 ? (fr === 0 && fingers.near) : fretOk(n, fr);
+      if (ok) { hit(n, 'finger', Math.abs(n.time - t)); sound(n.s, n.f); }
+    }
+  }
+  while (app.missPtr < chart.length && chart[app.missPtr].time < t - win) {
+    const n = chart[app.missPtr]; app.missPtr++;
+    if (!n.result) miss(n);
+    if (app.state !== 'playing') return;
+  }
+}
+function updateHolds(t) {
+  if (!holding.length) return;
+  const beat = song && song.bpm ? 60 / song.bpm : 0.6;
+  holding = holding.filter(n => {
+    if (!n.hold.active) return false;
+    const end = n.time + n.dur;
+    const ok = n.hold.src === 'keys' ? keysDown[n.s] : (fingers.tracked && (n.f === 0 ? fingers.pressed[n.s] === 0 : fretOk(n, fingers.pressed[n.s])));
+    if (!ok) { n.hold.active = false; return false; }
+    const now = Math.min(t, end), gained = Math.max(0, now - n.hold.last);
+    n.hold.last = now; app.score += Math.round(gained / beat * 25 * mult());
+    if (Math.random() < 0.15) burst(L(targetX(n.f), n.s, 0.002), STR[n.s].col);
+    if (now >= end) { n.hold.active = false; return false; }
+    return true;
+  });
+  panelsDirty = true;
+}
+function burst(p, col) { const b = bursts.find(b => b.life <= 0) || bursts[0]; b.life = 1; b.m.visible = true; b.m.material.color.set(col); b.m.position.copy(p); }
+function popup(kind, p) { const q = popups.find(q => q.life <= 0) || popups[0]; q.life = 1; q.s.material = popupMat[kind]; q.s.visible = true; q.base = p.clone(); q.s.position.copy(p); }
+
+// ================= Dedos (seguimiento de manos) =================
+const fingers = { tracked: false, pressed: [0, 0, 0, 0], near: false, pluckState: new Map(), lastPluck: [0, 0, 0, 0] };
+const hands = [], ctrls = [], xrIn = { left: null, right: null };
+function updateFingers() {
+  fingers.pressed = [0, 0, 0, 0]; fingers.near = false; fingers.tracked = false;
+  const nowS = performance.now() / 1000;
+  const tips = [];
+  for (let i = 0; i < 2; i++) {
+    const hj = hands[i] && hands[i].joints; if (!hj) continue;
+    for (const name of TIPS) {
+      const j = hj[name]; if (!j || !j.visible) continue;
+      fingers.tracked = true;
+      j.getWorldPosition(tmpV);
+      const loc = tmpV.clone().applyMatrix4(neckInv);
+      const d = loc.x, sp = spAt(clamp(d, 0, neck.S * 1.1)), c = loc.y / sp, h = loc.z * neck.faceSign - (j.jointRadius || 0.008);
+      tips.push({ key: i + name, name, d, c, h, world: tmpV.clone() });
+    }
+  }
+  let fd = 0;
+  for (const tp of tips) {
+    const onBoard = tp.d > -0.01 && tp.d < fretPos(NFRET) + 0.01 && tp.c > -0.7 && tp.c < 3.7;
+    if (onBoard && tp.h < 0.03 && tp.h > -0.04) fingers.near = true;
+    let state = 'far';
+    if (tp.name !== 'thumb-tip' && onBoard && tp.d > 0.003 && tp.h < PRESS_H && tp.h > -0.035 && tp.c > -0.5 && tp.c < 3.5) {
+      const s = clamp(Math.round(tp.c), 0, 3), f = fretFromD(tp.d);
+      fingers.pressed[s] = Math.max(fingers.pressed[s], f); state = 'press';
+    } else if (onBoard && tp.h < 0.03) state = 'hover';
+    const inPluck = tp.d > neck.S * 0.55 && tp.d < neck.S * 1.03 && tp.h < 0.025 && tp.h > -0.04 && tp.c > -1 && tp.c < 4;
+    if (inPluck) state = 'pluck';
+    if (fd < fingerDots.length) { const m = fingerDots[fd++]; m.visible = state !== 'far'; m.position.copy(tp.world); m.material = fingerMats[state]; }
+    tp.inPluck = inPluck;
+  }
+  for (; fd < fingerDots.length; fd++) fingerDots[fd].visible = false;
+  // Punteo: el dedo cruza la línea de una cuerda en la zona del cuerpo (con histéresis)
+  for (const tp of tips) {
+    if (!tp.inPluck || tp.name === 'pinky-finger-tip' || tp.name === 'ring-finger-tip') { fingers.pluckState.delete(tp.key); continue; }
+    let st = fingers.pluckState.get(tp.key);
+    if (!st) { st = [0, 0, 0, 0].map((_, s) => tp.c < s - 0.15 ? -1 : tp.c > s + 0.15 ? 1 : 0); fingers.pluckState.set(tp.key, st); continue; }
+    for (let s = 0; s < 4; s++) {
+      const side = tp.c < s - 0.15 ? -1 : tp.c > s + 0.15 ? 1 : st[s];
+      if (st[s] !== 0 && side !== 0 && side !== st[s] && nowS - fingers.lastPluck[s] > 0.08) { fingers.lastPluck[s] = nowS; pluck(s, fingers.pressed[s], 'hand'); }
+      st[s] = side;
+    }
+  }
+  // Puntos de color donde el juego ve tus dedos pisando
+  for (let s = 0; s < 4; s++) {
+    const f = fingers.pressed[s], m = pressDots[s];
+    m.visible = f > 0; if (f > 0) m.position.copy(L(targetX(f), s, 0.004));
+  }
+}
+const fingerMats = {
+  hover: new THREE.MeshBasicMaterial({ color: 0x9a94a8, transparent: true, opacity: 0.7, depthTest: false }),
+  press: new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false }),
+  pluck: new THREE.MeshBasicMaterial({ color: 0xf2a541, depthTest: false }),
+};
+
+// ================= Calibración y anclaje =================
+const calib = { active: false, step: 0, temp: [], radius: [] };
+const CALIB_STEPS = ['Cuerda Mi (E) junto a la cejuela', 'Cuerda Sol (G) junto a la cejuela', 'Cuerda Mi (E) sobre el traste 12', 'Cuerda Sol (G) sobre el traste 12'];
+const dwell = new Map();
+function buildCalibUI() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 256;
+  calibCtx = c.getContext('2d'); calibTex = new THREE.CanvasTexture(c);
+  calibPanel = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.11), new THREE.MeshBasicMaterial({ map: calibTex, transparent: true, depthTest: false }));
+  calibPanel.renderOrder = 10; calibPanel.visible = false; scene.add(calibPanel);
+  for (let i = 0; i < 2; i++) {
+    const g = new THREE.Group(); g.visible = false;
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.004, 12, 8), new THREE.MeshBasicMaterial({ color: 0xf2a541, depthTest: false }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.009, 0.012, 32), new THREE.MeshBasicMaterial({ color: 0xf2a541, depthTest: false, side: THREE.DoubleSide }));
+    dot.renderOrder = ring.renderOrder = 9; g.add(dot, ring); scene.add(g); cursors.push({ g, ring });
+  }
+  for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.005, 12, 8), new THREE.MeshBasicMaterial({ color: i % 2 ? STR[3].col : STR[0].col, depthTest: false })); m.renderOrder = 9; m.visible = false; scene.add(m); calibMarks.push(m); }
+  for (let i = 0; i < 10; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.0045, 10, 8), fingerMats.hover); m.renderOrder = 8; m.visible = false; scene.add(m); fingerDots.push(m); }
+}
+function drawCalib(progress) {
+  const g = calibCtx, W = 1024, H = 256;
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = 'rgba(21,19,29,0.92)'; rr(g, 4, 4, W - 8, H - 8, 28); g.fill();
+  g.textAlign = 'left'; g.fillStyle = '#f2a541'; g.font = '700 40px "Barlow Condensed", sans-serif';
+  g.fillText(`CALIBRAR TU BAJO ${calib.step + 1} / 4`, 40, 66);
+  g.fillStyle = '#ece6d8'; g.font = '700 62px "Barlow Condensed", sans-serif'; g.fillText(CALIB_STEPS[calib.step] || '', 40, 140);
+  g.fillStyle = '#9a94a8'; g.font = '500 30px "Barlow", sans-serif';
+  g.fillText('Toca el punto con el índice y quédate quieto, o usa el gatillo del mando', 40, 204);
+  g.fillStyle = '#2c2939'; g.fillRect(40, 226, W - 80, 6);
+  g.fillStyle = '#f2a541'; g.fillRect(40, 226, (W - 80) * (progress || 0), 6);
+  calibTex.needsUpdate = true;
+}
+function startCalib() {
+  if (!renderer.xr.isPresenting) { toast('La calibración se hace con el visor puesto. Pulsa «Entrar» primero.'); return; }
+  if (app.state === 'playing') togglePlay();
+  calib.active = true; calib.step = 0; calib.temp = []; calib.radius = [];
+  calibMarks.forEach(m => m.visible = false);
+  placeInFront(calibPanel, 0.5, 0.05, 0);
+  calibPanel.visible = true; drawCalib(0); dwell.clear();
+}
+function captureCalib(p, radius) {
+  if (!calib.active) return;
+  if (calib.temp.some(q => q.distanceTo(p) < 0.012)) return;
+  calib.temp.push(p.clone()); calib.radius.push(radius || 0);
+  calibMarks[calib.step].position.copy(p); calibMarks[calib.step].visible = true;
+  calib.step++; dwell.clear();
+  if (calib.step < 4) { drawCalib(0); return; }
+  calib.active = false; calibPanel.visible = false;
+  setTimeout(() => calibMarks.forEach(m => m.visible = false), 1500);
+  solveNeck();
+}
+function solveNeck() {
+  const [P1, P2, P3, P4] = calib.temp;
+  const head = renderer.xr.getCamera().getWorldPosition(new THREE.Vector3());
+  const u = P3.clone().sub(P1), half = u.length(); u.normalize();
+  const g0 = P2.clone().sub(P1), v = g0.clone().addScaledVector(u, -g0.dot(u)); const w0 = v.length(); v.normalize();
+  const n = new THREE.Vector3().crossVectors(u, v);
+  // El Mi queda arriba tanto para diestros como para zurdos: si la cejuela está a tu izquierda (diestro), el diapasón mira hacia u×v; si no, al revés.
+  const righty = u.dot(headFrame().r) > 0;
+  const faceSign = righty ? 1 : -1; void head;
+  let w12 = P4.clone().sub(P3).dot(v); if (!(w12 > w0 * 0.9 && w12 < w0 * 2)) w12 = w0 * 1.2;
+  const r = calib.radius.reduce((a, b) => a + b, 0) / 4;
+  const origin = P1.clone().addScaledVector(n, -faceSign * r);
+  Object.assign(neck, { S: half * 2, w0, w12, faceSign, calibrated: true });
+  neckMatrix.makeBasis(u, v, n).setPosition(origin);
+  applyNeckMatrix(); buildNeckContent();
+  // Modo mando: guardar el desfase entre el mando y el mástil
+  const grip = anchorGrip();
+  if (app.anchor === 'ctrl') {
+    if (grip) { grip.updateMatrixWorld(true); anchorOffset.copy(grip.matrixWorld).invert().multiply(neckMatrix); calib.anchored = true; }
+    else { calib.anchored = false; toast('No encuentro el mando sujeto al bajo. Queda calibrado en modo fijo.', 5000); }
+  } else calib.anchored = false;
+  const cm = Math.round(neck.S * 1000) / 10, inch = (neck.S / 0.0254).toFixed(1);
+  const odd = neck.S < 0.68 || neck.S > 0.95;
+  $('#calibStatus').textContent = `Calibrado: escala de ${cm} cm (${inch}″)${calib.anchored ? ', siguiendo al mando' : ', posición fija'}.` + (odd ? ' La escala parece rara; si las marcas no coinciden, calibra de nuevo.' : '');
+  toast(odd ? 'Calibrado, pero la escala parece rara. Revisa que tocaste sobre el traste 12.' : `Bajo calibrado: escala de ${inch}″`, 4500);
+  placeHud(true);
+}
+function anchorGrip() {
+  const want = app.anchorSide;
+  for (let i = 0; i < 2; i++) { const src = gripSrc[i]; if (src && !src.hand && src.handedness === want) return grips[i]; }
+  return null;
+}
+const grips = [], gripSrc = [null, null];
+function updateAnchor() {
+  if (!calib.anchored || app.anchor !== 'ctrl') return;
+  const grip = anchorGrip(); if (!grip || !grip.visible) return;
+  neckMatrix.multiplyMatrices(grip.matrixWorld, anchorOffset);
+  applyNeckMatrix();
+}
+function updateCalib(dt) {
+  cursors.forEach(c => c.g.visible = false);
+  if (!calib.active) return;
+  const cam = renderer.xr.getCamera(); cam.getWorldPosition(tmpV2);
+  let best = 0, k = 0;
+  for (let i = 0; i < 2; i++) {
+    const hj = hands[i] && hands[i].joints, tip = hj && hj['index-finger-tip'];
+    if (!tip || !tip.visible) continue;
+    const p = tip.getWorldPosition(new THREE.Vector3()), c = cursors[k++];
+    c.g.visible = true; c.g.position.copy(p); c.g.lookAt(tmpV2);
+    let d = dwell.get(i);
+    if (!d || d.anchor.distanceTo(p) > 0.007) { d = { anchor: p.clone(), time: 0 }; dwell.set(i, d); }
+    d.time += dt;
+    const prog = Math.min(1, d.time / 1.2);
+    c.ring.scale.setScalar(1 + (1 - prog) * 1.5); best = Math.max(best, prog);
+    if (prog >= 1) { captureCalib(d.anchor, tip.jointRadius || 0.008); return; }
+  }
+  drawCalib(best);
+}
+function placeInFront(obj, dist, dy, dx) {
+  const cam = renderer.xr.getCamera(), p = new THREE.Vector3(), q = new THREE.Quaternion();
+  cam.matrixWorld.decompose(p, q, new THREE.Vector3());
+  const f = new THREE.Vector3(0, 0, -1).applyQuaternion(q); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize();
+  const r = new THREE.Vector3(-f.z, 0, f.x);
+  obj.position.copy(p).addScaledVector(f, dist).addScaledVector(r, dx || 0); obj.position.y += dy;
+  obj.lookAt(p.x, obj.position.y, p.z);
+}
+function headFrame() {
+  const cam = renderer.xr.getCamera(), p = new THREE.Vector3(), q = new THREE.Quaternion();
+  cam.matrixWorld.decompose(p, q, new THREE.Vector3());
+  const f = new THREE.Vector3(0, 0, -1).applyQuaternion(q); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize();
+  return { p, f, r: new THREE.Vector3(-f.z, 0, f.x) };
+}
+// Sin calibrar: un mástil de práctica frente al jugador
+function placeDefaultNeck() {
+  const { p, f, r } = headFrame();
+  const n = new THREE.Vector3(0, 0.95, 0).addScaledVector(f, -0.3).normalize(), u = r.clone(), v = new THREE.Vector3().crossVectors(n, u);
+  Object.assign(neck, { S: 0.864, w0: 0.034, w12: 0.044, faceSign: 1, calibrated: false });
+  const o = p.clone().addScaledVector(f, 0.42).addScaledVector(r, -neck.S * 0.42); o.y = p.y - 0.5;
+  neckMatrix.makeBasis(u, v, n).setPosition(o); applyNeckMatrix(); buildNeckContent();
+}
+// El marcador flota sobre el mástil, mirando al jugador
+function placeHud(snap) {
+  const center = new THREE.Vector3(neck.S * 0.35, 1.5 * spAt(neck.S * 0.35), 0).applyMatrix4(neckMatrix);
+  const { p, f } = headFrame();
+  const target = center.clone().lerp(p, 0.15).addScaledVector(f, 0.12); target.y = Math.max(center.y + 0.26, p.y - 0.12);
+  if (snap) hud.position.copy(target); else hud.position.lerp(target, 0.04);
+  hud.lookAt(p.x, hud.position.y, p.z);
+  dock.position.copy(hud.position).addScaledVector(new THREE.Vector3(-f.z, 0, f.x), 0.5); dock.position.y -= 0.08;
+  dock.lookAt(p.x, dock.position.y, p.z);
+  dock.visible = true;
+}
+
+// ================= Bucle =================
+let lastFrame = performance.now(), uiLast = 0, tiltTime = 0, liftTime = 0;
+function frame() {
+  const now = performance.now(), dt = Math.min(0.05, (now - lastFrame) / 1000); lastFrame = now;
+  const live = app.state === 'playing' || app.state === 'paused';
+  let t;
+  if (live) t = songTime();
+  else if (chart.length) { const a = chart[0].time - 1.5, span = Math.min(40, chart[chart.length - 1].time - a + 2); t = a + ((now / 1000) % span); }
+  else t = 0;
+  if (renderer.xr.isPresenting) {
+    if (needSetup && now - xrStartedAt > 600) { setupSession(); needSetup = false; }
+    updateAnchor(); updateFingers(); updateCalib(dt); updateButtons(dt); placeHud(false);
+  }
+  if (app.state === 'playing') {
+    judge(t); if (app.state === 'playing') updateHolds(t);
+    if (app.starOn) { const bar = song.bpm ? 240 / song.bpm : 2.4; app.star -= dt / (8 * bar); panelsDirty = true; if (app.star <= 0) { app.star = 0; app.starOn = false; } }
+    if (song && t > song.buffer.duration + 0.5) finish();
+  }
+  updateNotes(t, live); updateFx(t, dt);
+  if (panelsDirty && now - panelsLast > 100) { drawPanels(); panelsLast = now; panelsDirty = false; }
+  if (msgUntil && now > msgUntil) { const k = 1 - (now - msgUntil) / 400; if (k <= 0) hideMsg(); else msgP.material.opacity = k; }
+  if (now - uiLast > 150) { updateScoreUI(); uiLast = now; }
+  renderer.render(scene, camera);
+}
+function updateNotes(t, live) {
+  let k = 0, rk = 0, cellNote = null;
+  const fs = neck.faceSign;
+  for (let i = lowerBound(t - 4); i < chart.length && k < pool.length; i++) {
+    const n = chart[i], dtH = n.time - t;
+    if (dtH > LOOK) break;
+    const holdingNow = live && n.hold && n.hold.active;
+    const tailEnd = n.dur > 0 ? Math.min(LOOK, n.time + n.dur - t) : -1;
+    if (live && n.result === 'hit' && !holdingNow) continue;
+    if (dtH < -0.15 && tailEnd < 0) continue;
+    if (!cellNote && !(live && n.result) && dtH > -0.1) cellNote = n;
+    const o = pool[k++], x = targetX(n.f), y = n.s * spAt(x), missed = live && n.result === 'miss';
+    const z = Math.max(-0.02, dtH * SPEED) + 0.006;
+    const showHead = !(live && n.result === 'hit') && dtH > -0.15;
+    const sc = clamp((LOOK - dtH) / (0.25 * LOOK), 0.05, 1);
+    const isStar = n.star && !(live && phrases[n.star] && phrases[n.star].missed);
+    const mat = missed ? grayMat : app.starOn ? starOnMat : isStar ? starMats[n.s] : strMats[n.s];
+    o.gem.visible = showHead && n.f > 0; o.open.visible = showHead && n.f === 0;
+    if (showHead) {
+      if (n.f > 0) { o.gem.position.set(x, y, z * fs); o.gem.scale.setScalar(sc); o.gem.material = mat; }
+      else { const len = fretPos(MAXF); o.open.position.set(len / 2, n.s * spAt(len / 2), z * fs); o.open.scale.set(len * sc, 1, 1); o.open.material = mat; }
+    }
+    o.label.visible = showHead && !missed;
+    if (o.label.visible) { o.label.material = isStar ? starLabelMat[n.f] : fretLabelMat[n.f]; o.label.position.set(n.f > 0 ? x : fretPos(1) * 0.5, y, (z + 0.02) * fs); o.label.scale.set(isStar ? 0.03 : 0.02, 0.02, 1); }
+    o.stem.visible = showHead && dtH > 0.02 && !missed;
+    if (o.stem.visible) { o.stem.position.set(n.f > 0 ? x : fretPos(1) * 0.5, y, z * fs / 2); o.stem.scale.set(0.0012, 0.0012, z); }
+    if (n.dur > 0 && tailEnd > 0) {
+      const a = holdingNow ? 0.004 : Math.max(0.004, z), b = tailEnd * SPEED + 0.006;
+      o.tail.visible = b > a + 0.003;
+      if (o.tail.visible) {
+        const tx = n.f > 0 ? x : fretPos(1) * 0.5, wob = holdingNow ? 1 + 0.3 * Math.sin(t * 40) : 1;
+        o.tail.position.set(tx, y, (a + b) / 2 * fs); o.tail.scale.set(0.007 * wob, 0.007 * wob, b - a);
+        const dropped = live && n.result === 'hit' && !holdingNow;
+        o.tail.material = (missed || dropped) ? grayMat : holdingNow ? strGlow[n.s] : mat;
+      }
+    } else o.tail.visible = false;
+    // Anillo de aproximación sobre el diapasón
+    if (!(live && n.result) && dtH > -0.05 && dtH < 1.2 && rk < rings.length) {
+      const r = rings[rk++], rad = 0.011 + dtH * 0.03;
+      r.visible = true; r.position.set(n.f > 0 ? x : fretPos(1) * 0.5, y, 0.003 * fs); r.scale.set(rad, rad, 1);
+      r.material.color.set(STR[n.s].col); r.material.opacity = clamp(1 - dtH / 1.2, 0, 1);
+    }
+  }
+  for (; k < pool.length; k++) { const o = pool[k]; o.gem.visible = o.open.visible = o.tail.visible = o.stem.visible = o.label.visible = false; }
+  for (; rk < rings.length; rk++) rings[rk].visible = false;
+  if (cellNote && cellNote.f > 0) {
+    const a = fretPos(cellNote.f - 1), b = fretPos(cellNote.f), m = (a + b) / 2;
+    nextCell.visible = true; nextCell.position.set(m, 1.5 * spAt(m), 0.002 * fs); nextCell.scale.set(b - a, 4 * spAt(m), 1);
+    nextCell.material.color.set(STR[cellNote.s].col); nextCell.material.opacity = 0.1 + 0.2 * clamp(1 - (cellNote.time - t) / 1.4, 0, 1);
+  } else nextCell.visible = false;
+  // Traste bajo el ratón (pantalla)
+  if (!renderer.xr.isPresenting && app.hoverFret > 0) {
+    pressDots.forEach((m, s) => { m.visible = true; m.position.copy(L(targetX(app.hoverFret), s, 0.004)); });
+  } else if (!renderer.xr.isPresenting) pressDots.forEach(m => m.visible = false);
+}
+function updateFx(t, dt) {
+  stringLines.forEach((l, s) => { l.flash = Math.max(0, l.flash - dt * 3); l.mat.color.set(l.flash > 0.05 ? '#ffffff' : STR[s].col).lerp(new THREE.Color(STR[s].col), 1 - l.flash); });
+  bursts.forEach(b => { if (b.life <= 0) return; b.life -= dt * 2.8; const r = 0.012 + (1 - b.life) * 0.03; b.m.scale.set(r, r, 1); b.m.material.opacity = Math.max(0, b.life); if (b.life <= 0) b.m.visible = false; });
+  popups.forEach(p => { if (p.life <= 0) return; p.life -= dt * 1.6; p.s.position.copy(p.base); p.s.position.z += (0.04 + (1 - p.life) * 0.03) * neck.faceSign; p.s.material.opacity = Math.min(1, p.life * 2); if (p.life <= 0) p.s.visible = false; });
+  if (pluckZone) pluckZone.material.opacity = 0.06 + 0.06 * Math.max(...stringLines.map(l => l.flash));
+  if (env.visible) {
+    const bd = song && song.bpm ? 60 / song.bpm : 0.6, b0 = song ? song.beat0 || 0 : 0;
+    const phase = (((t - b0) / bd) % 1 + 1) % 1;
+    const energy = app.state === 'playing' ? 0.25 + app.rock * 0.9 + (app.starOn ? 0.6 : 0) : 0.35;
+    const boo = app.state === 'playing' && app.rock < 0.33;
+    for (let i = 0; i < crowdData.length; i++) {
+      const c = crowdData[i];
+      const jump = boo ? 0 : Math.max(0, Math.sin((phase + c.ph * 0.05) * Math.PI * 2)) * 0.18 * energy * c.amp;
+      tmpV.set(c.x + Math.sin(t * 2 + c.ph) * 0.04, -1.2 + c.h * 0.5 + 0.2 + jump, c.z); tmpM.compose(tmpV, tmpQ, tmpS); crowdBody.setMatrixAt(i, tmpM);
+      tmpV.y += c.h * 0.5 + 0.12; tmpM.compose(tmpV, tmpQ, tmpS); crowdHead.setMatrixAt(i, tmpM);
+    }
+    crowdBody.instanceMatrix.needsUpdate = true; crowdHead.instanceMatrix.needsUpdate = true;
+    spots.forEach((s, i) => { s.material.opacity = 0.04 + 0.12 * Math.exp(-phase * 4) * (0.4 + energy * 0.6); s.rotation.z = (i - 2.5) * 0.08 + Math.sin(t * 0.7 + i) * 0.15; s.material.color.set(app.starOn ? STAR_COL : s.userData.col); });
+  }
+}
+
+// ================= Meta Quest: botones, gestos y sesión =================
+let needSetup = false, xrStartedAt = 0;
+function buildDock() {
+  dock = new THREE.Group(); dock.visible = false; scene.add(dock);
+  const defs = [['play', 'TOCAR · PAUSA', 0xece6d8, '#0c0b12'], ['restart', 'REINICIAR', 0x2c2939, '#ece6d8'], ['calib', 'CALIBRAR BAJO', 0xf2a541, '#1a1206'], ['star', 'PODER ESTELAR', 0x2a5f80, '#ffffff']];
+  defs.forEach(([id, label, col, txt], i) => {
+    const g = new THREE.Group();
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.045, 0.014), new THREE.MeshStandardMaterial({ color: col, roughness: 0.5 }));
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.116, 0.029), new THREE.MeshBasicMaterial({ map: makeCanvasTex(512, 128, (g2, w, h) => { g2.font = '700 64px "Barlow Condensed", sans-serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillStyle = txt; g2.fillText(label, w / 2, h / 2 + 2); }), transparent: true }));
+    lab.position.z = 0.0075; g.add(box, lab);
+    g.position.set((i % 2) * 0.13 - 0.065, -Math.floor(i / 2) * 0.055, 0);
+    g.userData = { id, box, cool: 0 }; dock.add(g); dockBtns.push(g);
+  });
+}
+function pressDock(id) {
+  const b = dockBtns.find(b => b.userData.id === id); if (b) { b.position.z = -0.006; setTimeout(() => { b.position.z = 0; }, 160); }
+  if (id === 'play') togglePlay(); else if (id === 'restart') restart(); else if (id === 'calib') startCalib(); else if (id === 'star') activateStar();
+}
+function setupXRControllers() {
+  for (let i = 0; i < 2; i++) {
+    const ctrl = renderer.xr.getController(i), hand = renderer.xr.getHand(i), grip = renderer.xr.getControllerGrip(i);
+    scene.add(ctrl, hand, grip); ctrls[i] = ctrl; hands[i] = hand; grips[i] = grip;
+    grip.addEventListener('connected', e => { gripSrc[i] = e.data; });
+    grip.addEventListener('disconnected', () => { gripSrc[i] = null; });
+    ctrl.addEventListener('connected', e => { const h = e.data.handedness; if (!e.data.hand && (h === 'left' || h === 'right')) xrIn[h] = { src: e.data, btn: {} }; });
+    ctrl.addEventListener('disconnected', e => { const h = e.data && e.data.handedness; if (h && xrIn[h] && xrIn[h].src === e.data) xrIn[h] = null; });
+    ctrl.addEventListener('selectstart', e => {
+      const src = e.data; if (!src || src.hand) return;
+      if (calib.active) { const p = new THREE.Vector3().setFromMatrixPosition(ctrl.matrixWorld); captureCalib(p, 0); return; }
+      const m = new THREE.Matrix4().extractRotation(ctrl.matrixWorld);
+      raycaster.ray.origin.setFromMatrixPosition(ctrl.matrixWorld); raycaster.ray.direction.set(0, 0, -1).applyMatrix4(m);
+      const hit = dock.visible && raycaster.intersectObjects(dockBtns.map(b => b.userData.box), false)[0];
+      if (hit) pressDock(hit.object.parent.userData.id);
+    });
+  }
+}
+function buzzAll(v, ms) { ['left', 'right'].forEach(h => { const r = xrIn[h], gp = r && r.src && r.src.gamepad, a = gp && gp.hapticActuators && gp.hapticActuators[0]; if (a && a.pulse) { try { a.pulse(v, ms); } catch (e) {} } }); }
+function updateButtons(dt) {
+  ['left', 'right'].forEach(h => {
+    const r = xrIn[h]; if (!r || !r.src.gamepad) return;
+    const gp = r.src.gamepad;
+    for (const idx of [4, 5]) {
+      const p = !!(gp.buttons[idx] && gp.buttons[idx].pressed);
+      if (p && !r.btn[idx]) {
+        if (h === 'right' && idx === 4) togglePlay();
+        if (h === 'right' && idx === 5) restart();
+        if (h === 'left' && idx === 4) startCalib();
+        if (h === 'left' && idx === 5) activateStar();
+      }
+      r.btn[idx] = p;
+    }
+  });
+  const head = renderer.xr.getCamera().getWorldPosition(tmpV2);
+  let lifted = false;
+  for (let i = 0; i < 2; i++) {
+    const hj = hands[i] && hands[i].joints; if (!hj) continue;
+    const tip = hj['index-finger-tip'], wrist = hj['wrist'];
+    if (wrist && wrist.visible) { wrist.getWorldPosition(tmpV); if (tmpV.y > head.y - 0.08) lifted = true; }
+    if (tip && tip.visible && dock.visible && !calib.active) {
+      tip.getWorldPosition(tmpV);
+      for (const b of dockBtns) {
+        const p = tmpV.clone(); b.worldToLocal(p);
+        const inside = Math.abs(p.x) < 0.07 && Math.abs(p.y) < 0.03 && p.z < 0.025 && p.z > -0.03, key = 'in' + i;
+        if (inside && !b.userData[key] && performance.now() > b.userData.cool) { b.userData.cool = performance.now() + 700; pressDock(b.userData.id); }
+        b.userData[key] = inside;
+      }
+    }
+  }
+  // Levantar el clavijero: el eje del mástil apunta hacia arriba (solo si el mástil sigue al mando)
+  const head2nut = new THREE.Vector3(-1, 0, 0).transformDirection(neckMatrix);
+  const tilted = calib.anchored && head2nut.y > 0.6;
+  const pl = liftTime, pt = tiltTime;
+  liftTime = lifted ? liftTime + dt : 0; tiltTime = tilted ? tiltTime + dt : 0;
+  if ((pl <= 0.3 && liftTime > 0.3) || (pt <= 0.3 && tiltTime > 0.3)) activateStar();
+}
+function setupSession() {
+  const { p, f } = headFrame();
+  root.position.set(p.x, 0, p.z); root.rotation.set(0, Math.atan2(-f.x, -f.z), 0);
+  if (!neck.calibrated) placeDefaultNeck();
+  setNeckLook(); placeHud(true);
+  toast(neck.calibrated ? 'Usando la calibración anterior. Pulsa «Calibrar bajo» si moviste el bajo.' : 'Pulsa «Calibrar bajo» y toca los 4 puntos de tu bajo.', 5000);
+}
+let xrSupport = { ar: false, vr: false };
+async function checkVR() {
+  let ar = false, vr = false;
+  try { if (navigator.xr) [ar, vr] = await Promise.all([navigator.xr.isSessionSupported('immersive-ar').catch(() => false), navigator.xr.isSessionSupported('immersive-vr').catch(() => false)]); } catch (e) {}
+  xrSupport = { ar, vr }; updateVRButton();
+  $('#vrNote').textContent = (!ar && !vr)
+    ? 'Aquí no hay realidad mixta ni VR. Abre esta página desde el navegador del Meta Quest 3 (servida por https). Mientras tanto puedes probar con el ratón y el teclado.'
+    : 'Deja los mandos (o sujeta uno al bajo) para que el visor siga tus manos.';
+}
+function updateVRButton() {
+  const btn = $('#vrBtn');
+  if (renderer && renderer.xr.isPresenting) { btn.textContent = 'Salir'; btn.disabled = false; return; }
+  btn.textContent = app.xrMode === 'ar' ? 'Entrar en realidad mixta' : 'Entrar al escenario VR';
+  btn.disabled = !(app.xrMode === 'ar' ? xrSupport.ar : xrSupport.vr);
+}
+async function enterXR() {
+  if (renderer.xr.isPresenting) { renderer.xr.getSession().end(); return; }
+  try {
+    ensureCtx();
+    const type = app.xrMode === 'ar' ? 'immersive-ar' : 'immersive-vr';
+    const s = await navigator.xr.requestSession(type, { optionalFeatures: ['local-floor', 'hand-tracking'] });
+    if (type === 'immersive-ar') { scene.background = null; scene.fog = null; env.visible = false; renderer.setClearColor(0x000000, 0); }
+    await renderer.xr.setSession(s);
+    xrStartedAt = performance.now(); needSetup = true; updateVRButton();
+    s.addEventListener('end', () => {
+      scene.background = new THREE.Color(0x0c0b12); scene.fog = new THREE.Fog(0x0c0b12, 6, 22); env.visible = true;
+      root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); dock.visible = false; calib.active = false; calibPanel.visible = false;
+      fingerDots.forEach(m => m.visible = false); fingers.tracked = false;
+      const keep = neck.calibrated; Object.assign(neck, { S: keep ? neck.S : 0.864 }); neck.faceSign = 1;
+      if (!keep) Object.assign(neck, { w0: 0.034, w12: 0.044 });
+      buildNeckContent(); setDesktopPose(); updateVRButton(); resize();
+    });
+  } catch (e) { toast('No se pudo iniciar: ' + (e && e.message ? e.message : e), 5000); }
+}
+
+// ================= Pantalla: ratón y teclado =================
+function boardLocal(ev) {
+  const r = renderer.domElement.getBoundingClientRect();
+  const v = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(v, camera);
+  const hit = raycaster.intersectObject(hitPlane)[0];
+  return hit ? hit.point.clone().applyMatrix4(neckInv) : null;
+}
+let busy = false;
+function setupInput() {
+  const cv = renderer.domElement;
+  cv.addEventListener('pointermove', ev => { const p = boardLocal(ev); if (!p) { app.hoverFret = 0; return; } const c = p.y / spAt(clamp(p.x, 0, neck.S)); app.hoverFret = (p.x > -0.02 && p.x < fretPos(NFRET) && c > -1.2 && c < 4.2) ? fretFromD(p.x) : 0; });
+  cv.addEventListener('pointerleave', () => { app.hoverFret = 0; });
+  cv.addEventListener('pointerdown', ev => {
+    const p = boardLocal(ev); if (!p) return;
+    const c = p.y / spAt(clamp(p.x, 0, neck.S)); if (c < -1 || c > 4) return;
+    const s = clamp(Math.round(c), 0, 3), fret = p.x > -0.01 && p.x < fretPos(NFRET) ? fretFromD(p.x) : app.hoverFret;
+    pluck(s, fret, 'keys');
+  });
+  const typing = tg => tg && /INPUT|TEXTAREA|SELECT/.test(tg.tagName) && !['range', 'radio', 'checkbox'].includes(tg.type);
+  window.addEventListener('keydown', ev => {
+    if (typing(ev.target)) return;
+    const k = ev.key.toLowerCase(), s = STR.findIndex(st => st.key === k);
+    if (s >= 0) { ev.preventDefault(); if (!ev.repeat) { keysDown[s] = true; pluck(s, app.hoverFret, 'keys'); } return; }
+    const onBtn = ev.target && ev.target.tagName === 'BUTTON';
+    if (k === ' ' && !onBtn) { ev.preventDefault(); activateStar(); }
+    if (k === 'enter' && !onBtn) { ev.preventDefault(); togglePlay(); }
+  });
+  window.addEventListener('keyup', ev => { const s = STR.findIndex(st => st.key === ev.key.toLowerCase()); if (s >= 0) { keysDown[s] = false; if (voices[s]) { voices[s].stop(); voices[s] = null; } } });
+  window.addEventListener('blur', () => keysDown.fill(false));
+
+  $('#playBtn').addEventListener('click', togglePlay);
+  $('#restartBtn').addEventListener('click', restart);
+  $('#starBtn').addEventListener('click', activateStar);
+  $('#calibBtn').addEventListener('click', startCalib);
+  $('#vrBtn').addEventListener('click', enterXR);
+  $('#demoBtn').addEventListener('click', () => { if (demoSong) { markLesson(null); useSong(demoSong); } });
+  document.querySelectorAll('input[name=diff]').forEach(r => r.addEventListener('change', () => {
+    app.diff = r.value; $('#diffHint').textContent = DIFF[app.diff].hint;
+    const wasLive = app.state === 'playing' || app.state === 'paused';
+    stopSource(); setState('idle'); hideMsg(); rebuildChart(); if (wasLive) startSong();
+  }));
+  document.querySelectorAll('input[name=xrmode]').forEach(r => r.addEventListener('change', () => { app.xrMode = r.value; updateVRButton(); }));
+  document.querySelectorAll('input[name=anchor]').forEach(r => r.addEventListener('change', () => {
+    app.anchor = r.value; $('#ctrlSide').hidden = app.anchor !== 'ctrl';
+    $('#anchorHint').textContent = app.anchor === 'ctrl'
+      ? 'Sujeta un mando al clavijero con una goma o un soporte y calibra con él puesto. El diapasón seguirá al bajo cuando lo muevas. Toca los puntos con la mano libre.'
+      : 'Con el bajo colgado, toca 4 puntos con el índice. El diapasón queda fijo donde está tu bajo; si te mueves mucho, recalibra.';
+  }));
+  document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', () => { app.anchorSide = r.value; }));
+  $('#showBoard').addEventListener('change', e => { app.showBoard = e.target.checked; setNeckLook(); });
+  $('#synthOn').addEventListener('change', e => { app.synthOn = e.target.checked; });
+  const bind = (id, out, fn) => { const el = $(id); el.addEventListener('input', () => { $(out).textContent = fn(+el.value); }); };
+  bind('#volSong', '#oSong', v => { applyMix(); return v + '%'; });
+  bind('#volBass', '#oBass', v => { applyMix(); return v + '%'; });
+  bind('#offset', '#oOff', v => { app.offsetMs = v; return (v > 0 ? '+' : '') + v + ' ms'; });
+  $('#cutBass').addEventListener('change', applyMix);
+  $('#canFail').addEventListener('change', e => { app.canFail = e.target.checked; });
+  $('#file').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => { const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); });
+  const list = $('#lessons');
+  LESSONS.forEach(Ls => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'lesson';
+    b.innerHTML = '<strong></strong><small></small>'; b.querySelector('strong').textContent = Ls.name; b.querySelector('small').textContent = Ls.meta;
+    b.addEventListener('click', () => loadLesson(Ls, b)); list.appendChild(b);
+  });
+}
+function markLesson(btn) { document.querySelectorAll('.lesson').forEach(b => b.classList.toggle('on', b === btn)); }
+function useSong(s) { stopSource(); hideMsg(); song = s; setState('idle'); rebuildChart(); $('#anaBar').style.width = '100%'; }
+async function loadFile(file) {
+  if (busy) return; busy = true; markLesson(null);
+  const bar = $('#anaBar'), name = file.name.replace(/\.[^.]+$/, '');
+  $('#songName').textContent = name; $('#songMeta').textContent = 'Leyendo el audio…'; bar.style.width = '4%';
+  try {
+    ensureCtx();
+    const ab = await file.arrayBuffer();
+    const buffer = await new Promise((res, rej) => { const p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+    $('#songMeta').textContent = 'Buscando el tempo y las notas del bajo…';
+    const r = await BassAnalyzer.analyzeBuffer(buffer, p => { bar.style.width = Math.round(5 + p * 95) + '%'; });
+    if (!r.events.length) throw new Error('no se detectaron notas graves en este audio');
+    useSong({ buffer, events: r.events, bpm: r.bpm, beat0: r.beat0, name });
+    toast(`Partitura lista: ${chart.length} notas${r.bpm ? ' a ' + Math.round(r.bpm) + ' BPM' : ''}. Pulsa «Tocar».`);
+  } catch (e) {
+    $('#songMeta').textContent = 'No se pudo analizar: ' + (e && e.message ? e.message : 'formato no compatible') + '. Prueba con MP3 o WAV.';
+    bar.style.width = '0'; if (song) setTimeout(updateSongCard, 4500);
+  } finally { busy = false; }
+}
+async function boot() {
+  try { await Promise.race([document.fonts.ready, sleep(1500)]); } catch (e) {}
+  if (!window.THREE) { $('#loading').textContent = 'No se pudo cargar el motor 3D. Revisa la conexión.'; return; }
+  buildScene(); setupInput(); checkVR();
+  $('#loading').hidden = true;
+  try { demoSong = await makeTrack(demoSpec()); if (!song) useSong(demoSong); }
+  catch (e) { $('#songName').textContent = 'No se pudo generar la demo. Carga una canción.'; }
+}
+window.__bajo = {
+  get renderer() { return renderer; }, app, neck, get chart() { return chart; }, songTime, pluck, activateStar,
+  test: { solve(pts, head) { calib.temp = pts.map(p => new THREE.Vector3(...p)); calib.radius = [0, 0, 0, 0]; const cam = renderer.xr.getCamera(); cam.position.set(...head); cam.updateMatrixWorld(true); solveNeck(); return { S: neck.S, w0: neck.w0, w12: neck.w12, faceSign: neck.faceSign }; },
+    toNeck(p) { const v = new THREE.Vector3(...p).applyMatrix4(neckInv); return { d: v.x, c: v.y / spAt(v.x), h: v.z * neck.faceSign, fret: fretFromD(v.x) }; } },
+};
+boot();
+})();
+
+</script>
+
+</body>
+</html>
