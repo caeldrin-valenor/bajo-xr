@@ -1,18 +1,17 @@
 # Bajo XR
 
-Juego de ritmo para **Meta Quest 3** (WebXR) en el que tu bajo eléctrico real, en silencio, es la referencia: el diapasón virtual se alinea con tu bajo y el visor lee con el seguimiento de manos qué traste pisas y cuándo punteas.
+Juego de ritmo para **Meta Quest 3** (WebXR) con 4 carriles, uno por cada dedo de la mano izquierda: índice, medio, anular y meñique. Cuando una ficha cruza la línea, pisas con ese dedo sobre tu bajo. El visor lee tus dedos con el seguimiento de manos; el bajo es el apoyo y no necesita sonar.
 
 **Jugar:** https://caeldrin-valenor.github.io/bajo-xr/
 
 ## Cómo usarlo en el Quest 3
 
 1. En el visor, activa *Configuración › Seguimiento del movimiento › Seguimiento de manos* y el cambio automático de mandos a manos.
-2. Abre el enlace en el Navegador del Quest.
-3. Elige una lección o carga una canción (MP3, WAV, OGG o M4A).
-4. Pulsa **Entrar en realidad mixta**, cuélgate el bajo y deja los mandos a un lado.
-5. Pulsa **Calibrar bajo**. En la calibración rápida, apoya el índice en el centro de la cejuela y luego en el centro del traste 12, y confirma cada punto pellizcando con la otra mano (o quedándote quieto 1 segundo). Después pellizca el mástil virtual, llévalo encima de tu bajo y pulsa **Listo**. La calibración precisa usa 4 puntos sobre las cuerdas Mi y Sol.
-6. Pulsa **Tocar** y pisa los trastes que marcan las fichas.
+2. Abre el enlace en el Navegador del Quest y elige una lección o carga una canción (MP3, WAV, OGG o M4A).
+3. Pulsa **Entrar en realidad mixta**, cuélgate el bajo y deja los mandos a un lado.
+4. La primera vez se abre **Calibrar dedos**: pisa con los 4 dedos sobre las cuerdas 3 segundos y luego levántalos 1 o 2 cm otros 3 segundos. Se guarda en el navegador.
+5. Pulsa **Tocar** y pisa con el dedo de cada ficha. Si la ficha tiene cola, mantén el dedo hasta que termine.
 
-Sin visor, la página funciona como vista previa: el ratón elige el traste y las teclas D, F, J y K puntean E, A, D y G.
+Para zurdos, elige «Zurdo · derecha» en el panel. Sin visor, las teclas A, S, D y F son los 4 dedos.
 
 El juego es un único archivo, `index.html`.
