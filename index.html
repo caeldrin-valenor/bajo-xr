@@ -151,13 +151,29 @@ kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--li
         <input type="radio" name="anchor" id="a-fixed" value="fixed" checked><label for="a-fixed">Calibrar con el dedo</label>
         <input type="radio" name="anchor" id="a-ctrl" value="ctrl"><label for="a-ctrl">Mando sujeto al bajo</label>
       </div>
-      <p class="hint" id="anchorHint">Con el bajo colgado, toca 4 puntos con el índice. El diapasón queda fijo donde está tu bajo; si te mueves mucho, recalibra.</p>
+      <p class="hint" id="anchorHint">El diapasón queda fijo donde está tu bajo al calibrar. Si te mueves mucho, recalibra.</p>
       <div class="seg two" id="ctrlSide" role="radiogroup" aria-label="Mando sujeto" hidden>
         <input type="radio" name="side" id="s-left" value="left" checked><label for="s-left">Mando izquierdo</label>
         <input type="radio" name="side" id="s-right" value="right"><label for="s-right">Mando derecho</label>
       </div>
+      <div class="seg two" role="radiogroup" aria-label="Tipo de calibración">
+        <input type="radio" name="cmode" id="c-quick" value="quick" checked><label for="c-quick">Rápida · 2 puntos</label>
+        <input type="radio" name="cmode" id="c-precise" value="precise"><label for="c-precise">Precisa · 4 puntos</label>
+      </div>
+      <p class="hint" id="cmodeHint">Marca 2 puntos en el centro del mástil y luego acomoda el diapasón virtual con un pellizco hasta que coincida.</p>
       <div class="calib">
-        <svg viewBox="0 0 320 92" role="img" aria-label="Puntos de calibración: cuerda Mi y cuerda Sol junto a la cejuela, y las mismas cuerdas sobre el traste 12">
+        <svg id="svgQuick" viewBox="0 0 320 92" role="img" aria-label="Puntos de calibración rápida: centro de la cejuela y centro del traste 12">
+          <rect x="18" y="18" width="290" height="56" rx="4" fill="var(--wood)"/>
+          <rect x="16" y="16" width="6" height="60" fill="var(--ivory)"/>
+          <g stroke="var(--fret)" stroke-width="2">
+            <line x1="62" y1="18" x2="62" y2="74"/><line x1="100" y1="18" x2="100" y2="74"/><line x1="136" y1="18" x2="136" y2="74"/><line x1="169" y1="18" x2="169" y2="74"/><line x1="200" y1="18" x2="200" y2="74"/><line x1="229" y1="18" x2="229" y2="74"/><line x1="256" y1="18" x2="256" y2="74"/><line x1="281" y1="18" x2="281" y2="74"/><line x1="304" y1="18" x2="304" y2="74" stroke-width="3"/>
+          </g>
+          <g stroke-width="2"><line x1="8" y1="26" x2="314" y2="26" stroke="var(--e)"/><line x1="8" y1="40" x2="314" y2="40" stroke="var(--a)"/><line x1="8" y1="53" x2="314" y2="53" stroke="var(--d)"/><line x1="8" y1="66" x2="314" y2="66" stroke="var(--g)"/></g>
+          <g fill="var(--stage)" stroke="var(--amber)" stroke-width="3"><circle cx="24" cy="46.5" r="8"/><circle cx="304" cy="46.5" r="8"/></g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="var(--amber)" text-anchor="middle"><text x="24" y="50">1</text><text x="304" y="50">2</text></g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)"><text x="40" y="12">cejuela</text><text x="268" y="12">traste 12</text><text x="40" y="88">entre La y Re, en el centro</text></g>
+        </svg>
+        <svg id="svgPrecise" hidden viewBox="0 0 320 92" role="img" aria-label="Puntos de calibración: cuerda Mi y cuerda Sol junto a la cejuela, y las mismas cuerdas sobre el traste 12">
           <rect x="18" y="18" width="290" height="56" rx="4" fill="var(--wood)"/>
           <rect x="16" y="16" width="6" height="60" fill="var(--ivory)"/>
           <g stroke="var(--fret)" stroke-width="2">
@@ -238,7 +254,7 @@ kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--li
     <details open>
       <summary>Cómo se juega</summary>
       <dl class="keys">
-        <dt>Calibrar</dt><dd>Dentro del visor pulsa «Calibrar bajo» y toca con el índice los 4 puntos del dibujo. Quédate quieto 1 segundo en cada uno. La app mide la escala de tu bajo.</dd>
+        <dt>Calibrar</dt><dd>Dentro del visor pulsa «Calibrar bajo». Apoya el índice en cada punto del dibujo y pellizca con la otra mano para confirmarlo (o quédate quieto 1 segundo). Luego pellizca el mástil virtual, llévalo sobre tu bajo y pulsa «Listo».</dd>
         <dt>Mando</dt><dd>Para que el diapasón siga al bajo cuando lo mueves, sujeta un mando al clavijero con una goma o un soporte y calibra con él puesto.</dd>
         <dt>Notas</dt><dd>Las fichas vuelan hacia tu diapasón y se posan en la cuerda y el traste. Pisa ese traste y puntea esa cuerda cuando llegue.</dd>
         <dt>Sostenidas</dt><dd>Si la ficha tiene cola, mantén el dedo en el traste hasta que termine.</dd>
@@ -470,7 +486,7 @@ const DIFF = {
 };
 
 const app = {
-  state: 'idle', diff: 'normal', xrMode: 'ar', anchor: 'fixed', anchorSide: 'left', offsetMs: 0, canFail: true, synthOn: true, showBoard: true,
+  state: 'idle', diff: 'normal', xrMode: 'ar', anchor: 'fixed', calibMode: 'quick', anchorSide: 'left', offsetMs: 0, canFail: true, synthOn: true, showBoard: true,
   score: 0, streak: 0, best: 0, hits: 0, judged: 0, rock: 0.5, star: 0, starOn: false, missPtr: 0, hoverFret: 0,
 };
 let song = null, demoSong = null, chart = [], phrases = {};
@@ -998,7 +1014,8 @@ function fail() {
   r.textContent = `Canción fallida al ${Math.round(100 * app.judged / Math.max(1, chart.length))}% del recorrido. Prueba en Fácil o desmarca «Se puede fallar».`;
 }
 function togglePlay() {
-  if (!song || calib.active) return;
+  if (!song) return;
+  if (calib.phase === 'adjust') finishAdjust(); else if (calib.active) return;
   if (app.state === 'playing') { ctx.suspend(); setState('paused'); showMsg('PAUSA', null, '#ece6d8', Infinity); }
   else if (app.state === 'paused') { setState('playing'); ctx.resume(); hideMsg(); }
   else startSong();
@@ -1165,9 +1182,16 @@ const fingerMats = {
 };
 
 // ================= Calibración y anclaje =================
-const calib = { active: false, step: 0, temp: [], radius: [] };
-const CALIB_STEPS = ['Cuerda Mi (E) junto a la cejuela', 'Cuerda Sol (G) junto a la cejuela', 'Cuerda Mi (E) sobre el traste 12', 'Cuerda Sol (G) sobre el traste 12'];
+// Rápida: 2 puntos en el centro del mástil + ajuste a mano. Precisa: 4 puntos sobre las cuerdas Mi y Sol.
+const calib = { active: false, phase: 'idle', step: 0, temp: [], radius: [], anchored: false };
+const CALIB_STEPS = {
+  quick: ['Centro de la cejuela, entre las cuerdas La y Re', 'Centro del traste 12, entre las cuerdas La y Re'],
+  precise: ['Cuerda Mi (E) junto a la cejuela', 'Cuerda Sol (G) junto a la cejuela', 'Cuerda Mi (E) sobre el traste 12', 'Cuerda Sol (G) sobre el traste 12'],
+};
+const calibSteps = () => CALIB_STEPS[app.calibMode] || CALIB_STEPS.quick;
 const dwell = new Map();
+const tipHist = [[], []];
+const grab = { on: false, idx: -1, start: new THREE.Matrix4(), neck0: new THREE.Matrix4() };
 function buildCalibUI() {
   const c = document.createElement('canvas'); c.width = 1024; c.height = 256;
   calibCtx = c.getContext('2d'); calibTex = new THREE.CanvasTexture(c);
@@ -1179,7 +1203,7 @@ function buildCalibUI() {
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.009, 0.012, 32), new THREE.MeshBasicMaterial({ color: 0xf2a541, depthTest: false, side: THREE.DoubleSide }));
     dot.renderOrder = ring.renderOrder = 9; g.add(dot, ring); scene.add(g); cursors.push({ g, ring });
   }
-  for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.005, 12, 8), new THREE.MeshBasicMaterial({ color: i % 2 ? STR[3].col : STR[0].col, depthTest: false })); m.renderOrder = 9; m.visible = false; scene.add(m); calibMarks.push(m); }
+  for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.005, 12, 8), new THREE.MeshBasicMaterial({ color: 0xf2a541, depthTest: false })); m.renderOrder = 9; m.visible = false; scene.add(m); calibMarks.push(m); }
   for (let i = 0; i < 10; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.0045, 10, 8), fingerMats.hover); m.renderOrder = 8; m.visible = false; scene.add(m); fingerDots.push(m); }
 }
 function drawCalib(progress) {
@@ -1187,59 +1211,117 @@ function drawCalib(progress) {
   g.clearRect(0, 0, W, H);
   g.fillStyle = 'rgba(21,19,29,0.92)'; rr(g, 4, 4, W - 8, H - 8, 28); g.fill();
   g.textAlign = 'left'; g.fillStyle = '#f2a541'; g.font = '700 40px "Barlow Condensed", sans-serif';
-  g.fillText(`CALIBRAR TU BAJO ${calib.step + 1} / 4`, 40, 66);
-  g.fillStyle = '#ece6d8'; g.font = '700 62px "Barlow Condensed", sans-serif'; g.fillText(CALIB_STEPS[calib.step] || '', 40, 140);
+  const adj = calib.phase === 'adjust';
+  g.fillText(adj ? 'AJUSTE FINO' : `CALIBRAR TU BAJO · PUNTO ${calib.step + 1} DE ${calibSteps().length}`, 40, 66);
+  let main = adj ? 'Pellizca el mástil virtual y llévalo sobre tu bajo' : (calibSteps()[calib.step] || '');
+  let fs = 62; g.font = `700 ${fs}px "Barlow Condensed", sans-serif`;
+  while (g.measureText(main).width > W - 80 && fs > 36) { fs -= 2; g.font = `700 ${fs}px "Barlow Condensed", sans-serif`; }
+  g.fillStyle = '#ece6d8'; g.fillText(main, 40, 140);
   g.fillStyle = '#9a94a8'; g.font = '500 30px "Barlow", sans-serif';
-  g.fillText('Toca el punto con el índice y quédate quieto, o usa el gatillo del mando', 40, 204);
-  g.fillStyle = '#2c2939'; g.fillRect(40, 226, W - 80, 6);
-  g.fillStyle = '#f2a541'; g.fillRect(40, 226, (W - 80) * (progress || 0), 6);
+  g.fillText(adj ? 'Cuando coincida, pulsa el botón 3D «Listo» o la X del mando' : 'Apoya el índice ahí y pellizca con la otra mano, o quédate quieto 1 segundo', 40, 204);
+  if (!adj) { g.fillStyle = '#2c2939'; g.fillRect(40, 226, W - 80, 6); g.fillStyle = '#f2a541'; g.fillRect(40, 226, (W - 80) * (progress || 0), 6); }
   calibTex.needsUpdate = true;
 }
 function startCalib() {
   if (!renderer.xr.isPresenting) { toast('La calibración se hace con el visor puesto. Pulsa «Entrar» primero.'); return; }
+  if (calib.phase === 'adjust') { finishAdjust(); return; }
   if (app.state === 'playing') togglePlay();
-  calib.active = true; calib.step = 0; calib.temp = []; calib.radius = [];
+  calib.active = true; calib.phase = 'points'; calib.step = 0; calib.temp = []; calib.radius = [];
   calibMarks.forEach(m => m.visible = false);
   placeInFront(calibPanel, 0.5, 0.05, 0);
   calibPanel.visible = true; drawCalib(0); dwell.clear();
 }
 function captureCalib(p, radius) {
-  if (!calib.active) return;
-  if (calib.temp.some(q => q.distanceTo(p) < 0.012)) return;
+  if (!calib.active || calib.phase !== 'points') return;
+  if (calib.temp.some(q => q.distanceTo(p) < 0.02)) { toast('Ese punto está muy cerca del anterior. Muévete al siguiente.'); return; }
   calib.temp.push(p.clone()); calib.radius.push(radius || 0);
   calibMarks[calib.step].position.copy(p); calibMarks[calib.step].visible = true;
+  buzzAll(0.5, 40);
   calib.step++; dwell.clear();
-  if (calib.step < 4) { drawCalib(0); return; }
-  calib.active = false; calibPanel.visible = false;
+  if (calib.step < calibSteps().length) { drawCalib(0); return; }
   setTimeout(() => calibMarks.forEach(m => m.visible = false), 1500);
-  solveNeck();
+  if (app.calibMode === 'precise') solveNeck(); else solveQuick();
+  beginAdjust();
+}
+function solveQuick() {
+  const [A, B] = calib.temp;
+  const u = B.clone().sub(A), half = u.length(); u.normalize();
+  // Suponemos el Mi arriba: el eje a través de las cuerdas es la vertical hacia abajo, perpendicular al mástil
+  const down = new THREE.Vector3(0, -1, 0), v = down.clone().addScaledVector(u, -down.dot(u));
+  if (v.lengthSq() < 1e-4) v.set(0, 0, -1); v.normalize();
+  const n = new THREE.Vector3().crossVectors(u, v);
+  const faceSign = u.dot(headFrame().r) > 0 ? 1 : -1;
+  Object.assign(neck, { S: half * 2, w0: 0.034, w12: 0.044, faceSign, calibrated: true });
+  const r = (calib.radius[0] + calib.radius[1]) / 2;
+  const origin = A.clone().addScaledVector(v, -1.5 * spAt(0)).addScaledVector(n, -faceSign * r);
+  neckMatrix.makeBasis(u, v, n).setPosition(origin);
+  finalizeNeck();
 }
 function solveNeck() {
   const [P1, P2, P3, P4] = calib.temp;
-  const head = renderer.xr.getCamera().getWorldPosition(new THREE.Vector3());
   const u = P3.clone().sub(P1), half = u.length(); u.normalize();
   const g0 = P2.clone().sub(P1), v = g0.clone().addScaledVector(u, -g0.dot(u)); const w0 = v.length(); v.normalize();
   const n = new THREE.Vector3().crossVectors(u, v);
   // El Mi queda arriba tanto para diestros como para zurdos: si la cejuela está a tu izquierda (diestro), el diapasón mira hacia u×v; si no, al revés.
-  const righty = u.dot(headFrame().r) > 0;
-  const faceSign = righty ? 1 : -1; void head;
+  const faceSign = u.dot(headFrame().r) > 0 ? 1 : -1;
   let w12 = P4.clone().sub(P3).dot(v); if (!(w12 > w0 * 0.9 && w12 < w0 * 2)) w12 = w0 * 1.2;
   const r = calib.radius.reduce((a, b) => a + b, 0) / 4;
   const origin = P1.clone().addScaledVector(n, -faceSign * r);
   Object.assign(neck, { S: half * 2, w0, w12, faceSign, calibrated: true });
   neckMatrix.makeBasis(u, v, n).setPosition(origin);
-  applyNeckMatrix(); buildNeckContent();
-  // Modo mando: guardar el desfase entre el mando y el mástil
-  const grip = anchorGrip();
-  if (app.anchor === 'ctrl') {
-    if (grip) { grip.updateMatrixWorld(true); anchorOffset.copy(grip.matrixWorld).invert().multiply(neckMatrix); calib.anchored = true; }
-    else { calib.anchored = false; toast('No encuentro el mando sujeto al bajo. Queda calibrado en modo fijo.', 5000); }
-  } else calib.anchored = false;
+  finalizeNeck();
+}
+function finalizeNeck() {
+  applyNeckMatrix(); buildNeckContent(); setNeckLook();
+  updateAnchorOffset();
   const cm = Math.round(neck.S * 1000) / 10, inch = (neck.S / 0.0254).toFixed(1);
   const odd = neck.S < 0.68 || neck.S > 0.95;
-  $('#calibStatus').textContent = `Calibrado: escala de ${cm} cm (${inch}″)${calib.anchored ? ', siguiendo al mando' : ', posición fija'}.` + (odd ? ' La escala parece rara; si las marcas no coinciden, calibra de nuevo.' : '');
-  toast(odd ? 'Calibrado, pero la escala parece rara. Revisa que tocaste sobre el traste 12.' : `Bajo calibrado: escala de ${inch}″`, 4500);
+  $('#calibStatus').textContent = `Calibrado: escala de ${cm} cm (${inch}″)${calib.anchored ? ', siguiendo al mando' : ', posición fija'}.` + (odd ? ' La escala parece rara; si los trastes no coinciden, calibra de nuevo.' : '');
+  if (odd) toast('La escala medida parece rara. Revisa que marcaste justo encima del traste 12.', 5000);
   placeHud(true);
+}
+function updateAnchorOffset() {
+  if (app.anchor !== 'ctrl') { calib.anchored = false; return; }
+  const g = anchorGrip();
+  if (g) { g.updateMatrixWorld(true); anchorOffset.copy(g.matrixWorld).invert().multiply(neckMatrix); calib.anchored = true; }
+  else { calib.anchored = false; toast('No encuentro el mando sujeto al bajo. Queda calibrado en modo fijo.', 5000); }
+}
+function beginAdjust() {
+  calib.phase = 'adjust'; grab.on = false;
+  placeInFront(calibPanel, 0.5, 0.12, 0); calibPanel.visible = true; drawCalib(0);
+  setDockLabel('calib', 'LISTO');
+}
+function finishAdjust() {
+  grab.on = false; calib.active = false; calib.phase = 'idle'; calibPanel.visible = false;
+  updateAnchorOffset(); setDockLabel('calib', 'CALIBRAR BAJO');
+  toast(`Bajo calibrado: escala de ${(neck.S / 0.0254).toFixed(1)}″. Pulsa «Tocar» cuando quieras.`, 4000);
+}
+// Pellizco (o gatillo): confirma un punto o agarra el mástil en el ajuste fino
+function onSelectStart(i, src) {
+  if (!calib.active) return false;
+  if (calib.phase === 'points') {
+    if (src.hand) {
+      const other = hands[1 - i] && hands[1 - i].joints && hands[1 - i].joints['index-finger-tip'];
+      if (other && other.visible) { captureCalib(other.getWorldPosition(new THREE.Vector3()), other.jointRadius || 0.008); return true; }
+      const h = tipHist[i], now = performance.now(), old = h.find(e => now - e.t > 250 && now - e.t < 600);
+      if (old) captureCalib(old.p, old.r);
+    } else captureCalib(new THREE.Vector3().setFromMatrixPosition(ctrls[i].matrixWorld), 0);
+    return true;
+  }
+  if (calib.phase === 'adjust' && grips[i]) {
+    grips[i].updateMatrixWorld(true);
+    grab.on = true; grab.idx = i; grab.start.copy(grips[i].matrixWorld); grab.neck0.copy(neckMatrix);
+    buzzAll(0.3, 30);
+    return true;
+  }
+  return false;
+}
+function onSelectEnd(i) { if (grab.on && grab.idx === i) grab.on = false; }
+function setDockLabel(id, label) {
+  const b = dockBtns.find(b => b.userData.id === id); if (!b) return;
+  const txt = b.userData.txt;
+  b.userData.lab.material.map = makeCanvasTex(512, 128, (g2, w, h) => { g2.font = '700 64px "Barlow Condensed", sans-serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillStyle = txt; g2.fillText(label, w / 2, h / 2 + 2); });
+  b.userData.lab.material.needsUpdate = true;
 }
 function anchorGrip() {
   const want = app.anchorSide;
@@ -1248,14 +1330,28 @@ function anchorGrip() {
 }
 const grips = [], gripSrc = [null, null];
 function updateAnchor() {
-  if (!calib.anchored || app.anchor !== 'ctrl') return;
-  const grip = anchorGrip(); if (!grip || !grip.visible) return;
-  neckMatrix.multiplyMatrices(grip.matrixWorld, anchorOffset);
+  if (calib.phase === 'adjust' || !calib.anchored || app.anchor !== 'ctrl') return;
+  const g = anchorGrip(); if (!g || !g.visible) return;
+  neckMatrix.multiplyMatrices(g.matrixWorld, anchorOffset);
   applyNeckMatrix();
 }
+const tmpD = new THREE.Matrix4();
 function updateCalib(dt) {
   cursors.forEach(c => c.g.visible = false);
+  const now = performance.now();
+  for (let i = 0; i < 2; i++) {
+    const tip = hands[i] && hands[i].joints && hands[i].joints['index-finger-tip'], h = tipHist[i];
+    if (tip && tip.visible) h.push({ t: now, p: tip.getWorldPosition(new THREE.Vector3()), r: tip.jointRadius || 0.008 });
+    while (h.length && now - h[0].t > 700) h.shift();
+  }
   if (!calib.active) return;
+  if (calib.phase === 'adjust') {
+    if (grab.on && grips[grab.idx] && grips[grab.idx].visible) {
+      tmpD.copy(grab.start).invert().premultiply(grips[grab.idx].matrixWorld);
+      neckMatrix.multiplyMatrices(tmpD, grab.neck0); applyNeckMatrix();
+    }
+    return;
+  }
   const cam = renderer.xr.getCamera(); cam.getWorldPosition(tmpV2);
   let best = 0, k = 0;
   for (let i = 0; i < 2; i++) {
@@ -1264,11 +1360,11 @@ function updateCalib(dt) {
     const p = tip.getWorldPosition(new THREE.Vector3()), c = cursors[k++];
     c.g.visible = true; c.g.position.copy(p); c.g.lookAt(tmpV2);
     let d = dwell.get(i);
-    if (!d || d.anchor.distanceTo(p) > 0.007) { d = { anchor: p.clone(), time: 0 }; dwell.set(i, d); }
-    d.time += dt;
-    const prog = Math.min(1, d.time / 1.2);
+    if (!d || d.anchor.distanceTo(p) > 0.013) { d = { anchor: p.clone(), sum: new THREE.Vector3(), n: 0, time: 0 }; dwell.set(i, d); }
+    d.time += dt; d.sum.add(p); d.n++;
+    const prog = Math.min(1, d.time / 0.9);
     c.ring.scale.setScalar(1 + (1 - prog) * 1.5); best = Math.max(best, prog);
-    if (prog >= 1) { captureCalib(d.anchor, tip.jointRadius || 0.008); return; }
+    if (prog >= 1) { captureCalib(d.sum.divideScalar(d.n), tip.jointRadius || 0.008); return; }
   }
   drawCalib(best);
 }
@@ -1417,7 +1513,7 @@ function buildDock() {
     const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.116, 0.029), new THREE.MeshBasicMaterial({ map: makeCanvasTex(512, 128, (g2, w, h) => { g2.font = '700 64px "Barlow Condensed", sans-serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillStyle = txt; g2.fillText(label, w / 2, h / 2 + 2); }), transparent: true }));
     lab.position.z = 0.0075; g.add(box, lab);
     g.position.set((i % 2) * 0.13 - 0.065, -Math.floor(i / 2) * 0.055, 0);
-    g.userData = { id, box, cool: 0 }; dock.add(g); dockBtns.push(g);
+    g.userData = { id, box, cool: 0, lab, txt }; dock.add(g); dockBtns.push(g);
   });
 }
 function pressDock(id) {
@@ -1432,9 +1528,10 @@ function setupXRControllers() {
     grip.addEventListener('disconnected', () => { gripSrc[i] = null; });
     ctrl.addEventListener('connected', e => { const h = e.data.handedness; if (!e.data.hand && (h === 'left' || h === 'right')) xrIn[h] = { src: e.data, btn: {} }; });
     ctrl.addEventListener('disconnected', e => { const h = e.data && e.data.handedness; if (h && xrIn[h] && xrIn[h].src === e.data) xrIn[h] = null; });
+    ctrl.addEventListener('selectend', () => onSelectEnd(i));
     ctrl.addEventListener('selectstart', e => {
-      const src = e.data; if (!src || src.hand) return;
-      if (calib.active) { const p = new THREE.Vector3().setFromMatrixPosition(ctrl.matrixWorld); captureCalib(p, 0); return; }
+      const src = e.data; if (!src) return;
+      if (onSelectStart(i, src) || src.hand) return;
       const m = new THREE.Matrix4().extractRotation(ctrl.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(ctrl.matrixWorld); raycaster.ray.direction.set(0, 0, -1).applyMatrix4(m);
       const hit = dock.visible && raycaster.intersectObjects(dockBtns.map(b => b.userData.box), false)[0];
@@ -1464,7 +1561,7 @@ function updateButtons(dt) {
     const hj = hands[i] && hands[i].joints; if (!hj) continue;
     const tip = hj['index-finger-tip'], wrist = hj['wrist'];
     if (wrist && wrist.visible) { wrist.getWorldPosition(tmpV); if (tmpV.y > head.y - 0.08) lifted = true; }
-    if (tip && tip.visible && dock.visible && !calib.active) {
+    if (tip && tip.visible && dock.visible && calib.phase !== 'points' && !grab.on) {
       tip.getWorldPosition(tmpV);
       for (const b of dockBtns) {
         const p = tmpV.clone(); b.worldToLocal(p);
@@ -1486,7 +1583,7 @@ function setupSession() {
   root.position.set(p.x, 0, p.z); root.rotation.set(0, Math.atan2(-f.x, -f.z), 0);
   if (!neck.calibrated) placeDefaultNeck();
   setNeckLook(); placeHud(true);
-  toast(neck.calibrated ? 'Usando la calibración anterior. Pulsa «Calibrar bajo» si moviste el bajo.' : 'Pulsa «Calibrar bajo» y toca los 4 puntos de tu bajo.', 5000);
+  toast(neck.calibrated ? 'Usando la calibración anterior. Pulsa «Calibrar bajo» si moviste el bajo.' : 'Pulsa «Calibrar bajo» para alinear el diapasón con tu bajo.', 5000);
 }
 let xrSupport = { ar: false, vr: false };
 async function checkVR() {
@@ -1514,7 +1611,7 @@ async function enterXR() {
     xrStartedAt = performance.now(); needSetup = true; updateVRButton();
     s.addEventListener('end', () => {
       scene.background = new THREE.Color(0x0c0b12); scene.fog = new THREE.Fog(0x0c0b12, 6, 22); env.visible = true;
-      root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); dock.visible = false; calib.active = false; calibPanel.visible = false;
+      root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); dock.visible = false; calib.active = false; calib.phase = 'idle'; grab.on = false; calibPanel.visible = false; setDockLabel('calib', 'CALIBRAR BAJO');
       fingerDots.forEach(m => m.visible = false); fingers.tracked = false;
       const keep = neck.calibrated; Object.assign(neck, { S: keep ? neck.S : 0.864 }); neck.faceSign = 1;
       if (!keep) Object.assign(neck, { w0: 0.034, w12: 0.044 });
@@ -1570,7 +1667,14 @@ function setupInput() {
     app.anchor = r.value; $('#ctrlSide').hidden = app.anchor !== 'ctrl';
     $('#anchorHint').textContent = app.anchor === 'ctrl'
       ? 'Sujeta un mando al clavijero con una goma o un soporte y calibra con él puesto. El diapasón seguirá al bajo cuando lo muevas. Toca los puntos con la mano libre.'
-      : 'Con el bajo colgado, toca 4 puntos con el índice. El diapasón queda fijo donde está tu bajo; si te mueves mucho, recalibra.';
+      : 'El diapasón queda fijo donde está tu bajo al calibrar. Si te mueves mucho, recalibra.';
+  }));
+  document.querySelectorAll('input[name=cmode]').forEach(r => r.addEventListener('change', () => {
+    app.calibMode = r.value;
+    $('#svgQuick').toggleAttribute('hidden', app.calibMode !== 'quick'); $('#svgPrecise').toggleAttribute('hidden', app.calibMode === 'quick');
+    $('#cmodeHint').textContent = app.calibMode === 'quick'
+      ? 'Marca 2 puntos en el centro del mástil y luego acomoda el diapasón virtual con un pellizco hasta que coincida.'
+      : 'Marca 4 puntos sobre las cuerdas Mi y Sol. Mide también la separación de las cuerdas de tu bajo.';
   }));
   document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', () => { app.anchorSide = r.value; }));
   $('#showBoard').addEventListener('change', e => { app.showBoard = e.target.checked; setNeckLook(); });
@@ -1623,7 +1727,7 @@ async function boot() {
 }
 window.__bajo = {
   get renderer() { return renderer; }, app, neck, get chart() { return chart; }, songTime, pluck, activateStar,
-  test: { solve(pts, head) { calib.temp = pts.map(p => new THREE.Vector3(...p)); calib.radius = [0, 0, 0, 0]; const cam = renderer.xr.getCamera(); cam.position.set(...head); cam.updateMatrixWorld(true); solveNeck(); return { S: neck.S, w0: neck.w0, w12: neck.w12, faceSign: neck.faceSign }; },
+  test: { quick(pts) { calib.temp = pts.map(p => new THREE.Vector3(...p)); calib.radius = [0, 0]; solveQuick(); return { S: neck.S, faceSign: neck.faceSign }; }, solve(pts, head) { calib.temp = pts.map(p => new THREE.Vector3(...p)); calib.radius = [0, 0, 0, 0]; const cam = renderer.xr.getCamera(); cam.position.set(...head); cam.updateMatrixWorld(true); solveNeck(); return { S: neck.S, w0: neck.w0, w12: neck.w12, faceSign: neck.faceSign }; },
     toNeck(p) { const v = new THREE.Vector3(...p).applyMatrix4(neckInv); return { d: v.x, c: v.y / spAt(v.x), h: v.z * neck.faceSign, fret: fretFromD(v.x) }; } },
 };
 boot();
